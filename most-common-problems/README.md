@@ -37,7 +37,7 @@ Note: The above symptoms may, of course, have other root causes. Yet they could 
 
 **Background**
 
-[This blog entry] (https://www.cockroachlabs.com/blog/memory-usage-cockroachdb/) written a few years ago still shares the current insights into how CRDB node processes use memory. CRDB&#39;s internal memory use accounting is hardening with every major release, yet given the reality of memory management in golang, precise memory accounting may not be feasible, and we will always have to allow for &quot;other&quot; memory. With insufficient memory, OOM kills become one of the major causes of cluster instability and inconsistent performance.
+[This blog entry](https://www.cockroachlabs.com/blog/memory-usage-cockroachdb/) written a few years ago still shares the current insights into how CRDB node processes use memory. CRDB&#39;s internal memory use accounting is hardening with every major release, yet given the reality of memory management in golang, precise memory accounting may not be feasible, and we will always have to allow for &quot;other&quot; memory. With insufficient memory, OOM kills become one of the major causes of cluster instability and inconsistent performance.
 
 In a properly designed CRDB cluster, a node process restart does not compromise transactional guarantees. However frequent node restarts, particularly after an abrupt process exit, will add resource use overhead during node recovery, potentially impacting the database performance consistency and SLA.
 
