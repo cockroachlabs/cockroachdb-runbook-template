@@ -14,11 +14,6 @@ Customers who already have a CockroachDB runbook can use this template to check 
 
 In practice, CockroachDB operators will strive to automate most of the checks and procedures. This template, however, is focused on documenting the detailed checklists and steps comprising individual operational procedures. The automation of these procedures is not in scope of this document.
 
-If a Cockroach Labs Enterprise Architect (CEA) participates in a deployment rollout, a customer will receive consultative assistance with:
-
-- Review of the custom runbook
-- CockroachDB best practices
-
 
 
 ---
@@ -29,7 +24,7 @@ If a Cockroach Labs Enterprise Architect (CEA) participates in a deployment roll
 
 **CockroachDB Cluster**  is a set of connected CockroachDB Nodes that form a single system that works together on all tasks.
 
-**Platform**  is a set of compatible hardware or virtualized hardware, as well as related structures, on which CockroachDB can be run. Platform examples are bare metal x86\_64, AWS EC2, Google Cloud Platform, Microsoft Azure, VMware vSphere.
+**Platform**  is a set of compatible hardware, virtualized or containerized hardware, as well as related structures, on which CockroachDB can be run. Platform examples are bare metal x86\_64, AWS EC2, Google Cloud Platform, Microsoft Azure, VMware vSphere, Docker, Kubernetes.
 
 
 
@@ -92,7 +87,7 @@ If a Cockroach Labs Enterprise Architect (CEA) participates in a deployment roll
         * [CockroachDB Major Version Upgrade](routine-maintenance/under-construction.md)
         * [Application Upgrade](routine-maintenance/under-construction.md)
     * [Database Administration Procedures](routine-maintenance/under-construction.md)
-    - [New database user setup](routine-maintenance/under-construction.md)
+    * [New database user setup](routine-maintenance/under-construction.md)
 1. **[The Most Common Problems experienced by CockroachDB users](most-common-problems/README.md)**
 1. **[Monitoring](monitoring-alerts/under-construction.md)**
     * [Monitoring tools](monitoring-alerts/under-construction.md)
@@ -102,7 +97,7 @@ If a Cockroach Labs Enterprise Architect (CEA) participates in a deployment roll
         * [Message and Error Logs](monitoring-alerts/under-construction.md)
     * [Critical metrics](monitoring-alerts/under-construction.md)
         * [Performance monitoring](monitoring-alerts/under-construction.md)
-            * [Query Latency](monitoring-alerts/under-construction.md)
+        * [Query Latency](monitoring-alerts/under-construction.md)
         * [Capacity monitoring](monitoring-alerts/under-construction.md)
         * [LSM Storage Shape Monitoring](monitoring-alerts/under-construction.md)
         * [CA Expiry](monitoring-alerts/under-construction.md)
