@@ -28,7 +28,7 @@ Note: The above symptoms may, of course, have other root causes. Yet they could 
 
 - The main measure to avoid CPU starvation is capacity planning, reconciling the workload concurrency requirements with the required number of vCPU in the cluster.
 - Implement an application-level workload governance; specifically – use connection pooling to control the workload concurrency. The total maximum number of connections across all connection pools should not exceed 4 x vCPUs.
-- Use larger CRDB VMs, the cluster will be more resilient to temporary workload spikes.
+- Use larger CRDB VMs, the cluster will be more resilient to temporary workload spikes and processing hotspots.
 - If LSM compaction falls behind, throttle the workload concurrency back to free up CPU resources to allow the compaction to catch up and restore a healthy LSM shape.
 
 
