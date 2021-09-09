@@ -105,7 +105,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
         * [ZZZ](monitoring-alerts/_under-construction_.md)
     * [Alert Response Procedures](monitoring-alerts/_under-construction_.md)
     * [Node Health Check](monitoring-alerts/_under-construction_.md)
-1. ** [Diagnostic and Support](monitoring-alerts/_under-construction_.md)**
+1. **[Diagnostic and Support](monitoring-alerts/_under-construction_.md)**
         * [CRDB Error Codes and Descriptions](diagnostic-support/errors-codes.md)
         * [Troubleshooting procedures](diagnostic-support/troubleshooting.md)
         * [L1 Support In-House)](diagnostic-support/support-l1.md)
