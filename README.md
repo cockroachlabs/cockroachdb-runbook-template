@@ -106,10 +106,10 @@ In practice, CockroachDB operators will strive to automate most of the checks an
     * [Alert Response Procedures](monitoring-alerts/_under-construction_.md)
     * [Node Health Check](monitoring-alerts/_under-construction_.md)
 1. **[Diagnostic and Support](monitoring-alerts/_under-construction_.md)**
-        * [CRDB Error Codes and Descriptions](diagnostic-support/errors-codes.md)
-        * [Troubleshooting procedures](diagnostic-support/troubleshooting.md)
-        * [L1 Support In-House)](diagnostic-support/support-l1.md)
-        * [L2 Support Escalation to Cockroach Labs](support-l2.md)
+    * [CRDB Error Codes and Descriptions](diagnostic-support/errors-codes.md)
+    * [Troubleshooting procedures](diagnostic-support/troubleshooting.md)
+    * [L1 Support In-House)](diagnostic-support/support-l1.md)
+    * [L2 Support Escalation to Cockroach Labs](support-l2.md)
 1. **[Emergency Procedures / Operation Continuity](emergency-procedures/_under-construction_.md)**
     * [Node Recovery](emergency-procedures/_under-construction_.md)
     * [Manual LSM compaction](emergency-procedures/lsm-shape.md)
