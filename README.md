@@ -68,6 +68,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
     * [Open / Close database &quot;gates&quot;](routine-maintenance/_under-construction_.md)
     * [Force closing application connections](routine-maintenance/_under-construction_.md)
     * [Firewall off the incoming traffic](routine-maintenance/_under-construction_.md)
+    * [Node Health Check](routine-maintenance/_under-construction_.md)
     * [Node Start / Stop / Restart](routine-maintenance/node-start-stop.md)
     * [Cluster Startup / Shutdown](routine-maintenance/cluster-startup-shutdown.md)
     * [Cluster Resizing](routine-maintenance/cluster-resizing.md)
@@ -104,7 +105,6 @@ In practice, CockroachDB operators will strive to automate most of the checks an
         * [Node Hot Spots](monitoring-alerts/_under-construction_.md)
         * [ZZZ](monitoring-alerts/_under-construction_.md)
     * [Alert Response Procedures](monitoring-alerts/_under-construction_.md)
-    * [Node Health Check](monitoring-alerts/_under-construction_.md)
 1. **[Diagnostic and Support](monitoring-alerts/_under-construction_.md)**
     * [CRDB Error Codes and Descriptions](diagnostic-support/errors-codes.md)
     * [Troubleshooting procedures](diagnostic-support/troubleshooting.md)
