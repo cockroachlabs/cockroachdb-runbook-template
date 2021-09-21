@@ -10,7 +10,7 @@ A `rocksdb.read-amplification` in the single digits is characteristic of a healt
 
 A `rocksdb.read-amplification` in the double/triple/quadruple digits suggests an inverted LSM.
 
-Possible root causes of LSM inversion and its harmful effects are outlined in  [the common problems experienced by CockroachDB users](most-common-problems/README.md) section.
+Possible root causes of LSM inversion and its harmful effects are outlined in  [the common problems experienced by CockroachDB users](../most-common-problems/README.md) section.
 
 
 
