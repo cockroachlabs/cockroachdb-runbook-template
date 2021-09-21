@@ -10,7 +10,7 @@ Node uptime is not incrementing. Check logs for possible panic loop.
 
 ------
 
-#### Alert Rule
+### Alert Rule
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
@@ -19,7 +19,7 @@ Node uptime is not incrementing. Check logs for possible panic loop.
 
 
 
-#### Alert Response
+### Alert Response
 
 The actual response varies depending on the alert tier, i.e. the severity of potential consequences.
 

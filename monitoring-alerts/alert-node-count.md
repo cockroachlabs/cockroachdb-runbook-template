@@ -10,7 +10,7 @@ Live node count change
 
 ------
 
-#### Alert Rule
+### Alert Rule
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
@@ -19,7 +19,7 @@ Live node count change
 
 
 
-#### Alert Response
+### Alert Response
 
 The actual response varies depending on the alert tier, i.e. the severity of potential consequences.
 

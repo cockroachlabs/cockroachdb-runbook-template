@@ -10,7 +10,7 @@ Health rule violation event.
 
 ------
 
-#### Alert Rule
+### Alert Rule
 
 | Tier     | Definition                                                 |
 | -------- | ---------------------------------------------------------- |
@@ -18,7 +18,7 @@ Health rule violation event.
 | WARNING  | Cluster Node free disk space is less than 30% for 24 hours |
 
 
-#### Alert Response
+### Alert Response
 
 ```
 <Response varies depending on the Tier (severity of potential consequences)>

@@ -10,7 +10,7 @@ Inconsistent Liveness check
 
 ------
 
-#### Alert Rule
+### Alert Rule
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
@@ -19,7 +19,7 @@ Inconsistent Liveness check
 
 
 
-#### Alert Response
+### Alert Response
 
 The actual response varies depending on the alert tier, i.e. the severity of potential consequences.
 

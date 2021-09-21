@@ -16,7 +16,7 @@ Possible root causes of LSM inversion and its harmful effects are outlined in  [
 
 ------
 
-#### Alert Rule
+### Alert Rule
 
 | Tier     | Definition                                    |
 | -------- | --------------------------------------------- |
@@ -25,7 +25,7 @@ Possible root causes of LSM inversion and its harmful effects are outlined in  [
 
 
 
-#### Alert Response
+### Alert Response
 
 The actual response varies depending on the alert tier, i.e. the severity of potential consequences.
 

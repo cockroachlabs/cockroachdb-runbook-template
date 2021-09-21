@@ -10,21 +10,21 @@ Health rule violation event. Node is low on memory.
 
 ------
 
-#### Alert Rule
+### Alert Rule
 
 ```
 Node Memory Utilization exceeds 90% for 1 hour
 ```
 
 
-#### Alert Tier
+### Alert Tier
 
 ```
 WARNING
 ```
 
 
-#### Alert Response
+### Alert Response
 
 ```
 <Response varies depending on the Tier (severity of potential consequences)>

@@ -14,7 +14,7 @@ Health rule violation event.
 
 ------
 
-#### Alert 1 Rule
+### Alert 1 Rule
 
 | Tier     | Definition                                      |
 | -------- | ----------------------------------------------- |
@@ -24,7 +24,7 @@ Health rule violation event.
 
 
 
-#### Alert 1 Response
+### Alert 1 Response
 
 <Response varies depending on the Tier (severity of potential consequences)>
 
@@ -32,7 +32,7 @@ Health rule violation event.
 
 ------
 
-#### Alert 2 Rule
+### Alert 2 Rule
 
 | Tier     | Definition                          |
 | -------- | ----------------------------------- |
@@ -42,7 +42,7 @@ Health rule violation event.
 
 
 
-#### Alert 2 Response
+### Alert 2 Response
 
 <Response varies depending on the Tier (severity of potential consequences)>
 
