@@ -16,6 +16,11 @@ Possible root causes of LSM inversion and its harmful effects are outlined in  [
 
 ------
 
+### Monitoring Metric(s)
+```
+rocksdb.read-amplification
+```
+
 ### Alert Rule
 
 | Tier     | Definition                                    |
