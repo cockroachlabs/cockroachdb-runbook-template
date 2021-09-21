@@ -1,4 +1,4 @@
-# Alert: Node LSM Storage Shape
+# Alert: Node LSM Storage Health
 
 ### Purpose of this Alert
 
