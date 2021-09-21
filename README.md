@@ -103,7 +103,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
         * [Node Storage Capacity](monitoring-alerts/alert-node-storage-capacity.md)
         * [Node Storage Performance](monitoring-alerts/alert-node-storage-perf.md)
         * [Node Liveness (inconsistent liveness check)](monitoring-alerts/alert-node-liveness.md)
-        * [LSM Storage Shape](monitoring-alerts/alert-lsm-shape.md)
+        * [Node LSM Storage Health](monitoring-alerts/alert-lsm-shape.md)
         * [High Query Latency](monitoring-alerts/_under-construction_.md)
         * [Intent Buildup](monitoring-alerts/alert-intent-buildup.md)
         * [Live Node Count Change](monitoring-alerts/alert-node-count.md)
