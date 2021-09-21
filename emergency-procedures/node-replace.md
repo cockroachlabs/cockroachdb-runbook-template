@@ -1,6 +1,6 @@
 # Procedure: Node Replace
 
-#### Pre-Requisites
+### Pre-Requisites
 
 Check cluster health?
 
@@ -12,7 +12,7 @@ Check if range replication status allows for it (i.e can survive a full failure)
 
 ------
 
-#### Procedure
+### Procedure
 
 On any node:
 
