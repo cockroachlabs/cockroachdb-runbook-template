@@ -1,6 +1,6 @@
 # Procedure: Manual LSM compaction
 
-#### Pre-Requisites
+### Pre-Requisites
 
 <pre-requisites?>
 
@@ -8,7 +8,7 @@
 
 ------
 
-#### Procedure
+### Procedure
 
 On the problem node:
 
