@@ -1,12 +1,15 @@
 
- **< UNDER CONSTRUCTION >**
+# Procedure: Node Replace
 
+### Pre-Requisites
 
-##### Node start
+<Check cluster health?>
+
+### Node start
 
 [Starting a node](https://www.cockroachlabs.com/docs/stable/cockroach-start.html)
 
-##### Node stop
+### Node stop
 
 There are multiple ways to stop a CRDB node based on how it was started:
 
@@ -22,7 +25,7 @@ Remove the node from LB
  There is a setting in systemd conf file and k8s - include here
  TimeoutStopSecs should be 300, not 60, to ensure orderly node draining and orderly shutdown]
 
-##### Node restart
+### Node restart
 
 Restarting a node requires that you first stop the node from the previous step and then start the node again following the instructions from 3.2.1.
 
