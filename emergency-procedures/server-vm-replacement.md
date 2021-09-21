@@ -1,6 +1,6 @@
 # Procedure: Server / VM Replacement
 
-#### Pre-Requisites
+### Pre-Requisites
 
 <pre-requisites?>
 
@@ -8,7 +8,7 @@
 
 ------
 
-#### Procedure
+### Procedure
 
 [From](https://cockroachlabs.atlassian.net/wiki/spaces/CS/pages/2156822576/Runbook+to+patch+Hypervisor+hosts)
 
