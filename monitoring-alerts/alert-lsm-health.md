@@ -35,10 +35,10 @@ The actual response varies depending on the alert tier, i.e. the severity of pot
 
 - Compaction may be "starved of CPU" if a high Read Amplification coincides with a high CPU utilization.  Address the high CPU utilization by reducing the workload concurrency. Compaction should "catch up" and the Read Amplification should be be gradually reduced to normal
 
-- In a severe case, a manual intervention may be required. The options are:
+In a severe case, a manual intervention may be required. The options are:
 
   1. [Run the offline manual compaction on the problem node](../emergency-procedures/lsm-compact.md)
-
+  
   1. [Replace the problem node](../emergency-procedures/node-replace.md)
+  
   1. [Wipe the problem node](../emergency-procedures/node-wipe.md)
-
