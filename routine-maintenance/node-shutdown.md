@@ -97,7 +97,7 @@ To handle this scenario, an application needs to implement the error handling lo
 
 ##### Connection Management
 
-A meaningfully complete implementation of the best practices for [connection management](../system-overview/connection-management.md) is a re-requisite for uninterrupted application service during CockroachDB node shutdown for maintenance.
+A meaningfully complete implementation of the best practices for [connection management](../system-overview/connection-management.md) is a pre-requisite for uninterrupted application service during CockroachDB node shutdown for maintenance.
 
 Here a digest of essential connection management points related to shutdown handling: 
 
