@@ -111,7 +111,7 @@ An application can mitigate both write-write and read-write contention with its 
 
 
 
-### 5. Hot Spots
+### 5. Hotspots
 
 **Background**
 
