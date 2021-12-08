@@ -16,17 +16,19 @@ Possible root causes of LSM inversion and its harmful effects are outlined in  [
 
 ------
 
-### Monitoring Metric(s)
+### Monitoring Metric
 ```
 rocksdb.read-amplification
 ```
+
+
 
 ### Alert Rule
 
 | Tier     | Definition                                    |
 | -------- | --------------------------------------------- |
 | CRITICAL | Read Amplification exceeds 150 for 10 minutes |
-| WARNING  | Read Amplification exceeds 75 for 1 hour      |
+| WARNING  | Read Amplification exceeds 50 for 1 hour      |
 
 
 
