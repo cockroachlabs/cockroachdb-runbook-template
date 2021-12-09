@@ -12,11 +12,11 @@
 
 On the problem node:
 
-1. [Stop the node](../routine-maintenance/node-start-stop.md)
+1. [Stop the node](../routine-maintenance/node-shutdown.md)
 
 2. Run a manual offline compaction for a problem node suffering from read amplification by issuing the following command:
 
    `cockroach debug compact`
 
-3. [Start the node](../routine-maintenance/node-start-stop.md).  
+3. [Start the node](../routine-maintenance/node-start.md).  
 
