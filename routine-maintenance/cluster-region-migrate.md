@@ -71,21 +71,19 @@ During a node shutdown, a node drain is followed by a node process termination.
 
 11. After a decommission completes, the compaction queue normally grows as a side effect. The remaining/active cluster nodes receive new range replicas which have to be compacted with existing ranges. By design, the compaction process is single-threaded and relatively slow. Users should expect no material impact on SQL workload while the queue is drained over multiple hours.
 
-TODO!!!
 
-**[Alex Entin](https://app.slack.com/team/UN56QMZU4)**[15 hours ago](https://cockroachlabs.slack.com/archives/C4ERHM60Z/p1637014728053700)
+### Migration of a Region in a Multi-Region Cluster
 
-Do we have a region migration procedure for a multi-region cluster?
-Does the region partitioning column has to be updated to match the new region name after new nodes added in New region and before nodes decommissioned in the Old region?
-That can be massive. Is it a better idea to preserve the region name and just add nodes in New location using the old region name, rebalance, then decommission nodes in the Old location? (edited) 
+Addional considerations apply when migrating a Region in a cluster that is using [multi-region capabilities](https://www.cockroachlabs.com/docs/v21.2/multiregion-overview.html). The data in a multi-region cluster is partitioned on a [specially maintained column](https://www.cockroachlabs.com/docs/v21.2/set-locality#crdb_region) that stores the row's home region name.
 
-**[Adam Storm](https://app.slack.com/team/U019J63NXUM)**[2 minutes ago](https://cockroachlabs.slack.com/archives/C4ERHM60Z/p1637068805054000?thread_ts=1637014728.053700&cid=C4ERHM60Z)
+A region can be migrated with or without region name change. If the region name can be preserved, a migration procedure would be simpler and measurably faster. However it could be confusing to database users if the region name refers to region's location and that location is changing. 
 
-> Does the region partitioning column has to be updated to match the new region name after new nodes added in New region and before nodes decommissioned in the Old region?
+If the region name can be preserved, an outline of the region migration procedure would be:
+- Add nodes in *new location* using the *old region name*
+- Wait for the rebalancing to complete and the cluster to settle into a steady state
+- Decommission nodes in the *old location*
 
-I’m assuming that you’re talking about using the new 21.2 primitives here. If so, yes. You’d first have to add the new region to the database, then update all of the rows in the table that you want to send to the new region, then remove the region from the database.
-
-> Is it a better idea to preserve the region name and just add nodes in New location using the old region name, rebalance, then decommission nodes in the Old location?
-
-You could do this, and it’s likely to be much faster, but I’d imagine it would be very confusing for the customer long-term.
-
+If the region name has to change, in addition to the above outline:
+- Add a new region name to the database
+- Update all of the rows in the table that should be sent to the *new region / location*
+- Remove the region from the database.
