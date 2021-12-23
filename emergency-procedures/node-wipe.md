@@ -18,7 +18,7 @@ Check if range replication status allows for it (i.e can survive a full failure)
 
 On the problem node:
 
-1. [Stop the node](../routine-maintenance/node-stop.md)
+1. [Stop the node](../routine-maintenance/node-shutdown.md)
 2. Delete the node's store directory
 
 3. [Start the node](../routine-maintenance/node-start.md)
