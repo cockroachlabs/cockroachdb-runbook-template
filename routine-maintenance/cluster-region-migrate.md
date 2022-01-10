@@ -3,11 +3,7 @@
 
 ### Purpose of this Procedure
 
-This procedure is an integral part of all regular maintenance that require a CockroachDB node process restart. For example, a rolling software upgrade.
-
-The first and the most essential phase of the shutdown is a *node drain*, during which a node orderly ends processing of transactions, closes client connections, transfers its range leases and stops ranges from rebalancing onto the node.
-
-During a node shutdown, a node drain is followed by a node process termination.
+< under development >
 
 
 
