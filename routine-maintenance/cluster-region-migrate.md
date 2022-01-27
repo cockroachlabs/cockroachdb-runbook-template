@@ -3,8 +3,9 @@
 
 ### Purpose of this Procedure
 
-< work in progress >
+This procedure is invoked when all or some nodes in one of the CockroachDB cluster's regions are relocated to another region. For example, moving all nodes from `US East` to `Europe (Ireland)`. The procedure is online, no service interruption, and it's designed to minimize the performance impact on the workload.
 
+The steps in this procedure can be edited to implement similar/related procedures, such as adding a new region to a CockroachDB cluster.
 
 
 ### Procedure Steps
