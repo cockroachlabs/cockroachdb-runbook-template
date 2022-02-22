@@ -83,7 +83,7 @@ Setting a termination grace period higher does not increase the elapsed time of 
 
 ##### Application Retries
 
-In addition to the client side [transaction error](https://www.cockroachlabs.com/docs/v21.2/transaction-retry-error-reference.html) retires, an application is required to implement a reconnection logic for errors it will receive during a node shutdown, as designed. These errors are [57P01](https://www.postgresql.org/docs/13/errcodes-appendix.html) `server is shutting down` and [08006](https://www.postgresql.org/docs/13/errcodes-appendix.html) `An I/O error occurred while sending to the backend`.
+In addition to the client side [transaction error](https://www.cockroachlabs.com/docs/v21.2/transaction-retry-error-reference.html) retires, an application is required to implement a reconnect logic for errors it will receive during a node shutdown, as designed. These errors are [57P01](https://www.postgresql.org/docs/13/errcodes-appendix.html) `server is shutting down` and [08006](https://www.postgresql.org/docs/13/errcodes-appendix.html) `An I/O error occurred while sending to the backend`.
 
 The above errors indicate that the current connection is broken and is no longer usable. If a connection is broken while a transaction was open, the application has to be prepared to handle the state of that transaction as *unknown*. A transaction on the server may complete successfully, however an application could receive a broken connection error. For example, once a transaction execution enters a commit phase on the server, it will run to completion, successfully committing or not, even if the client connection goes away.
 
