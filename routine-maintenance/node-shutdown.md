@@ -91,7 +91,7 @@ To handle this scenario, an application needs to implement the error handling lo
 
 - Close the the current connection.
 - Open a new connection.
-- Reissue the transaction on a new connection. If the transaction included a database write, the retry logic can't assume whether or not the previous transaction execution resulted in a committed change. E.g. rely on a primary key uniqueness constraint and re-issue an insert transaction, treating a duplicate primary key error as a success. 
+- Reissue the transaction on a new connection. If the transaction included a database write, the retry logic can't assume whether or not the previous transaction execution resulted in a committed change. For example, an application may rely on a primary key uniqueness constraint - re-issue an insert transaction and treat a duplicate primary key error as a success. 
 - If a shutdown related error persists, and the number of retires did not exceed some configured maximum - repeat.
 
 
