@@ -8,7 +8,7 @@
 
 ### About Workload Contention
 
-This section includes the *background information, examples, troubleshooting technique and remediation ideas* for cluster-wide *SQL workload* contention. It aims at detailing all possible contention scenarios, including:
+This section includes the *background information, examples, troubleshooting technique and remediation ideas* related to *SQL workload* contention matters. It provides a CockroachDB practitioner with essential knowledge and remediation points about possible workload contention scenarios, including:
 
 1. Statement (locking) conflicts
 2. Transaction isolation conflicts
@@ -21,14 +21,14 @@ To resolve any transaction contention, a database can take one of the two availa
 
 Sections below detail how CockroachDB handles the most common concurrency conflicts with either of the methods above.
 
-Contention scenario examples in this section include both [implicit and explicit transactions](../system-overview/tech-overview-trsansaction-implicit-explicit.md). If a sequence of SQL statements starts with a `BEGIN`, it denotes an explicit transaction. Otherwise a transaction is implicit, single-statement.
+Contention scenario illustrations in this section include both [implicit and explicit transactions](../system-overview/tech-overview-trsansaction-implicit-explicit.md). If a sequence of SQL statements starts with a `BEGIN`, it denotes an explicit transaction. Otherwise a transaction is implicit, single-statement.
 
 
 
 
-> 👍 **Best Practice: Design the schema and transactions that avoid conflicts by design**
+> 👍 **Best Practice: Design the schema and transactions that avoid contention conflicts-by-design**
 > - Contention always manifests itself as "bad performance"
-> - There are best practices to alleviate the performance penalties due to contention, yet none of them *solve* the contention problem.
+> - Best practices are available to alleviate the performance penalties due to contention, yet the only solution to a "contention problem" is a design that eliminates or greatly reduces the opportunities for contention.
 
 
 
