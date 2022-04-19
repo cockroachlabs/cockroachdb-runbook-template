@@ -81,9 +81,9 @@ When transactions in a deadlock have the same priority, which transaction is abo
 |                      | SELECT * FROM t WHERE k=2; | BEGIN;                       |
 |                      |                            | UPDATE t SET v=21 WHERE k=2; |
 |                      |                            | COMMIT;                      |
-|                      | COMMIT;                    | <success>                    |
-| COMMIT;              | <success>                  |                              |
-| <success>            |                            |                              |
+|                      | COMMIT;                    | `success`                    |
+| COMMIT;              | `success`                  |                              |
+| `success`            |                            |                              |
 
 
 
@@ -93,39 +93,39 @@ When transactions in a deadlock have the same priority, which transaction is abo
 | ------------------------------ | -------------------------- | ------------------------------- |
 | BEGIN;                         |                            |                                 |
 | UPDATE t SET v=2012 WHERE k=2; | BEGIN;                     |                                 |
-| <lock k=2>                     | SELECT * FROM t WHERE k=2; | BEGIN;                          |
-|                                | <waiting>                  | UPDATE t SET v=2032  WHERE k=2; |
-|                                |                            | <waiting>                       |
-| COMMIT;                        | <unblocked to proceed>     | <unblocked to proceed>          |
-| <success kv=2,2012>            | COMMIT;                    | COMMIT;                         |
-|                                | <success>                  | <success kv=2,2032>             |
+| `lock k=2`                     | SELECT * FROM t WHERE k=2; | BEGIN;                          |
+|                                | `waiting...`               | UPDATE t SET v=2032  WHERE k=2; |
+|                                |                            | `waiting...`                    |
+| COMMIT;                        | `unblocked to proceed...`  | `unblocked to proceed...`       |
+| `success, kv=2,2012`           | COMMIT;                    | COMMIT;                         |
+|                                | `success`                  | `success, kv=2,2032`            |
 
 
 
 ##### Contention Illustration 1.3.  Deadlock (write-write closed loop conflict)
 
-| Transaction 1 (SFU/write)                            | Transaction 2 (SFU/write)                            |
-| ---------------------------------------------------- | ---------------------------------------------------- |
-| BEGIN;                                               | BEGIN;                                               |
-| SELECT * FROM t WHERE k=2 FOR UPDATE;  -- <lock k=2> |                                                      |
-|                                                      | SELECT * FROM t WHERE k=3 FOR UPDATE;  -- <lock k=3> |
-| SELECT * FROM t WHERE k=3 FOR UPDATE;  -- <lock k=3> |                                                      |
-| <waiting>                                            | SELECT * FROM t WHERE k=2 FOR UPDATE;  -- <deadlock> |
-| <aborted>  -- Error 40001, Txn 1 chosen randomly     | <unblocked to proceed> -- Txn 2 could've gotten 40001|
-| COMMIT;                                              | COMMIT;                                              |
-| <rollback>                                           | <success>                                            |
-| <client retry>                                       |                                                      |
+| Transaction 1 (SFU/write)                            | Transaction 2 (SFU/write)                                 |
+| ---------------------------------------------------- | --------------------------------------------------------- |
+| BEGIN;                                               | BEGIN;                                                    |
+| SELECT * FROM t WHERE k=2 FOR UPDATE;     `lock k=2` |                                                           |
+|                                                      | SELECT * FROM t WHERE k=3 FOR UPDATE;     `lock k=3`      |
+| SELECT * FROM t WHERE k=3 FOR UPDATE;     `lock k=3` |                                                           |
+| `waiting...`                                         | SELECT * FROM t WHERE k=2 FOR UPDATE;  `<- deadlock!`     |
+| `aborted`  *Error 40001, Txn 1 chosen randomly*      | `unblocked to proceed...`   *Txn 2 could've gotten 40001* |
+| COMMIT;                                              | COMMIT;                                                   |
+| `rollback`                                           | `success`                                                 |
+| `client retry`                                       |                                                           |
 
 
 
 ##### Contention Illustration 1.4.  Column families, not blocking concurrent writes on the same key
 
-| Transaction 1 (write)                                | Transaction 2 (write)                                 |
-| ---------------------------------------------------- | ----------------------------------------------------- |
-| <work in progress>                                   |                                                       |
-| BEGIN;                                               | BEGIN;                                                |
-| COMMIT;                                              | COMMIT;                                               |
-| <success>                                            | <success>                                             |
+| Transaction 1 (write) | Transaction 2 (write) |
+| --------------------- | --------------------- |
+| `UNDER CONSTRUCTION`  | `UNDER CONSTRUCTION`  |
+| BEGIN;                | BEGIN;                |
+| COMMIT;               | COMMIT;               |
+| `success`             | `success`             |
 
 
 
@@ -171,49 +171,49 @@ CockroachDB is using a non-lock based optimistic concurrency control, acquiring 
 
 ##### Contention Illustration 2.1.  Classic Serialization violation (non-repetitive reads protection)
 
-| Transaction 1 (multi-statement)                      | Transaction 2 (write, implicit)                      |
-| ---------------------------------------------------- | ---------------------------------------------------- |
-| BEGIN;                                               |                                                      |
-| SELECT * FROM t WHERE v < 300000;                    |                                                      |
-|                                                      | UPDATE t SET v=2 WHERE k=3;   -- <lock k=3>          |
-| UPDATE t SET v=2 WHERE k=2;  -- <lock k=2>           |                                                      |
-| COMMIT;                                              |                                                      |
-| -- Error 40001 failed preemptive refresh (on commit) |                                                      |
-| <rollback>                                           |                                                      |
-| <client retry>                                       |                                                      |
+| Transaction 1 (multi-statement)                        | Transaction 2 (write, implicit)           |
+| ------------------------------------------------------ | ----------------------------------------- |
+| BEGIN;                                                 |                                           |
+| SELECT * FROM t WHERE v < 300000;                      |                                           |
+|                                                        | UPDATE t SET v=2 WHERE k=3;    `lock k=3` |
+| UPDATE t SET v=2 WHERE k=2;   `lock k=2`               |                                           |
+| COMMIT;                                                |                                           |
+| *`Error 40001: failed preemptive refresh (on commit)`* |                                           |
+| `rollback`                                             |                                           |
+| `client retry`                                         |                                           |
 
 
 
 ##### Contention Illustration 2.2.  Read-Modify-Write pattern, 2 identical contending transactions, different timing
 
-| Transaction 1 (multi-statement)                 | Transaction 2 (multi-statement)                 |
-| ----------------------------------------------- | ----------------------------------------------- |
-| BEGIN;                                          | BEGIN;                                          |
-| SELECT * FROM t;                                | SELECT * FROM t;                                |
-| <modify v=28888 in the app>                     | <modify v=29999 in the app>                     |
-|                                                 | UPDATE t SET v=29999 WHERE k=2;   -- <lock k=2> |
-| UPDATE t SET v=28888 WHERE k=2;   -- <lock k=2> |                                                 |
-| <wait>                                          | COMMIT;                                         |
-| -- Error 40001  Write Too Old error             | <success>                                       |
-| <rollback>                                      |                                                 |
-| <client retry>                                  |                                                 |
+| Transaction 1 (multi-statement)                | Transaction 2 (multi-statement)                |
+| ---------------------------------------------- | ---------------------------------------------- |
+| BEGIN;                                         | BEGIN;                                         |
+| SELECT * FROM t;                               | SELECT * FROM t;                               |
+| `modify v=28888 in the app...`                 | `modify v=29999 in the app...`                 |
+|                                                | UPDATE t SET v=29999 WHERE k=2;     `lock k=2` |
+| UPDATE t SET v=28888 WHERE k=2;     `lock k=2` |                                                |
+| `waiting...`                                   | COMMIT;                                        |
+| *`Error 40001: Write Too Old error`*           | `success`                                      |
+| `rollback`                                     |                                                |
+| `client retry`                                 |                                                |
 
 
 
 ##### Contention Illustration 2.3.  Read-Modify-Write pattern - 2.2 Illustration, Improved Implementation 
 
-| Transaction 1 (multi-statement)       | Transaction 2 (multi-statement)                      |
-| ------------------------------------- | ---------------------------------------------------- |
-| BEGIN;                                | BEGIN;                                               |
-|                                       | SELECT v FROM t WHERE k=2 FOR UPDATE;  -- <lock k=2> |
-| SELECT v FROM t WHERE k=2 FOR UPDATE; | <modify v=29999 in the app>                          |
-| <wait>                                | UPDATE t SET v=29999 WHERE k=2;                      |
-|                                       | COMMIT;                                              |
-| <unblocked to proceed> -- <lock k=2>  | <success>                                            |
-| <modify v=28888 in the app>           |                                                      |
-| UPDATE t SET v=28888 WHERE k=2;       |                                                      |
-| COMMIT;                               |                                                      |
-| <success>                             |                                                      |
+| Transaction 1 (multi-statement)        | Transaction 2 (multi-statement)                    |
+| -------------------------------------- | -------------------------------------------------- |
+| BEGIN;                                 | BEGIN;                                             |
+|                                        | SELECT v FROM t WHERE k=2 FOR UPDATE;   `lock k=2` |
+| SELECT v FROM t WHERE k=2 FOR UPDATE;  | `modify v=29999 in the app...`                     |
+| `waiting...`                           | UPDATE t SET v=29999 WHERE k=2;                    |
+|                                        | COMMIT;                                            |
+| `unblocked to proceed...`   `lock k=2` | `success`                                          |
+| `modify v=28888 in the app...`         |                                                    |
+| UPDATE t SET v=28888 WHERE k=2;        |                                                    |
+| COMMIT;                                |                                                    |
+| `success`                              |                                                    |
 
 
 
@@ -251,10 +251,10 @@ For information about handling transactions that had been forced to restart, rev
 
 ##### Contention Illustration 3.1.  Uncertainty Conflicts
 
-| Transaction 1 (read, singleton or multi) | Transaction 2 (write)                                |
-| ---------------------------------------- | ---------------------------------------------------- |
-| <This scenario is event timing driven>   | <Write needs to occur within max-offset of the read> |
-| <Not trivial to reproduce>               | <work in progress>                                   |
+| Transaction 1 (read, singleton or multi) | Transaction 2 (write)                                  |
+| ---------------------------------------- | ------------------------------------------------------ |
+| *`This scenario is event timing driven`* | *`Write needs to occur within max-offset of the read`* |
+| *`Not trivial to reproduce`*             | *`work in progress`*                                   |
 
 
 
