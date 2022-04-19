@@ -56,7 +56,7 @@ CockroachDB locking implementation highlights:
 
 #### Deadlock Detection and Resolution
 
-Write-write conflicts may also lead to deadlocks when different transactions acquire locks in different orders and then wait for each other to release the locks.
+Write-write conflicts may lead to deadlocks when different transactions acquire locks in different orders and then wait for each other to release the locks.
 
 CockroachDB employs a distributed deadlock-detection algorithm that analyzes the [wait queue](https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer.html#txnwaitqueue), which tracks the transactions that are blocked and transactions they are blocked by. When a closed loop is detected, one transaction from a cycle of waiters is forced to rollback and must be [retried](../system-overview/tech-overview-trsansaction-retires.md).
 
