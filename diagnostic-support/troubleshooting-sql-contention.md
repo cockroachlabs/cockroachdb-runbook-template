@@ -292,17 +292,17 @@ SELECT DISTINCT
     t.database_name
   , t.schema_name
   , t.name
-  , ti.index_name
-  , ce.num_contention_events
-  , ce.cumulative_contention_time
+  , i.index_name
+  , e.num_contention_events
+  , e.cumulative_contention_time
 FROM
-    crdb_internal.cluster_contention_events ce
-    INNER JOIN crdb_internal.table_indexes ti
-        ON  ce.index_id = ti.index_id AND ce.table_id = ti.descriptor_id
+    crdb_internal.cluster_contention_events e
+    INNER JOIN crdb_internal.table_indexes i
+        ON  e.index_id = i.index_id AND e.table_id = i.descriptor_id
     INNER JOIN crdb_internal.tables t
-        ON ce.table_id = t.table_id
+        ON e.table_id = t.table_id
 ORDER BY
-    ce.num_contention_events DESC
+    e.num_contention_events DESC
 ;
 ```
 
@@ -312,14 +312,14 @@ ORDER BY
 
 ### Esoteric Situations that may lead to 40001 Retry Errors
 
-The following is included for completeness, so operators are aware that
+The following is included for completeness, so a CockroachDB operator is aware that
 
 -  `40001` errors, that are normally associated with contention conflicts, can also occur outside of a contention situation
 - While conflict resolution normally results in one party of a conflict yielding excution, it's possible that a conflict may result in more than one victim
 
 #### Two transactions in a deadlock can cause each other to restart (both fail with a retry error)
 
-CockroachDB implementation is designed to not let two transactions both cancel each other, so the system would continue making progress on at least one of them. However it can't be completely rule it out. It would be difficult to make an example of that situation. It's esoteric and a peculiarity of the code paths.  is possible", as a friendly FYI.
+CockroachDB implementation is designed to not let two transactions both cancel each other, so the system would make progress on at least one of them. However a situation where both conflicting transactions fail with a retry error can't be completely rule it out. It would be difficult to make an example of that situation. It's a peculiarity of the code paths.
 
 #### A transaction can get a retry error code spuriously
 
