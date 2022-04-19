@@ -131,13 +131,6 @@ When transactions in a deadlock have the same priority, which transaction is abo
 
 
 
-> ✅ **Remedy: If conflicts in a multi-statement transaction is unavoidable - conflict early**
-> - Use `SELECT … FOR UPDATE` to conflicts earlier in the transaction
-> - Block earlier, before reads that could be invalidated later and result in a costly retry
-> - Note: `SELECT … FOR UPDATE` can really help by letting you trade the costly client-side retries for more efficient waits, but it does not *solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for the contention problem.
-
-
-
 > ✅ **Remedy: Columns families can eliminate conflicts**
 > - Contention happens at the key level
 > - Column families split a single row into multiple keys (KV pairs)
@@ -231,6 +224,14 @@ CockroachDB is using a non-lock based optimistic concurrency control, acquiring 
 >
 > - It may be possible to avoid reading a column value, modify and write it back by pushing the expression into an SQL update statement, so the transaction becomes [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md), which has the best possible concurrency characteristics.
 > - For example,  `UPDATE t SET v=v+1 WHERE k=2;` instead of increasing a counter in the application code.
+
+
+
+> ✅ **Remedy: If conflicts in a multi-statement transaction is unavoidable - conflict early**
+>
+> - Use `SELECT … FOR UPDATE` to conflicts earlier in the transaction
+> - Block earlier, before reads that could be invalidated later and result in a costly retry
+> - Note: `SELECT … FOR UPDATE` can really help by letting you trade the costly client-side retries for more efficient waits, but it does not *solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for the contention problem.
 
 
 
