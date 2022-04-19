@@ -1,5 +1,4 @@
-
- **< UNDER CONSTRUCTION >**
+**< UNDER CONSTRUCTION >**
 
 
 
@@ -123,12 +122,12 @@ When transactions in a deadlock have the same priority, which transaction is abo
 
 ##### Contention Illustration 1.4.  Column families, not blocking concurrent writes on the same key
 
-| Transaction 1 (write) | Transaction 2 (write) |
-| --------------------- | --------------------- |
-| `UNDER CONSTRUCTION`  | `UNDER CONSTRUCTION`  |
-| BEGIN;                | BEGIN;                |
-| COMMIT;               | COMMIT;               |
-| `success`             | `success`             |
+| Transaction 1 (write)      | Transaction 2 (write)      |
+| -------------------------- | -------------------------- |
+| ***`UNDER CONSTRUCTION`*** | ***`UNDER CONSTRUCTION`*** |
+| BEGIN;                     | BEGIN;                     |
+| COMMIT;                    | COMMIT;                    |
+| `success`                  | `success`                  |
 
 
 
@@ -277,13 +276,13 @@ For information about handling transactions that had been forced to restart, rev
 
 #### Using DB Console to Identify most contending Transaction 
 
-<work in progress>
+***`UNDER CONSTRUCTION`***
 
 [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/cockroachcloud/transactions-page.html)
 
 #### Using system tables (views)
 
-<work in progress>
+***`UNDER CONSTRUCTION`***
 
 [Transaction Contention](https://www.cockroachlabs.com/docs/v21.2/performance-best-practices-overview#find-transaction-contention)
 
