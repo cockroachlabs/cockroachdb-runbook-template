@@ -227,7 +227,7 @@ CockroachDB is using a non-lock based optimistic concurrency control, acquiring 
 
 
 
-> ✅ **Remedy: If conflicts in a multi-statement transaction is unavoidable - conflict early**
+> ✅ **Remedy: If conflicts in a multi-statement transaction are unavoidable - conflict early**
 >
 > - Use `SELECT … FOR UPDATE` to conflicts earlier in the transaction
 > - Block earlier, before reads that could be invalidated later and result in a costly retry
