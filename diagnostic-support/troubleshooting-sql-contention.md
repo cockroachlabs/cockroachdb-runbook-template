@@ -25,9 +25,12 @@ Sections below detail how CockroachDB handles the most common concurrency confli
 Contention scenario examples in this section include both [implicit and explicit transactions](../system-overview/tech-overview-trsansaction-implicit-explicit.md). If a sequence of SQL statements starts with a `BEGIN`, it denotes an explicit transaction. Otherwise a transaction is implicit, single-statement.
 
 
+
+
 > 👍 **Best Practice: Design the schema and transactions that avoid conflicts by design**
 > - Contention always manifests itself as "bad performance"
 > - There are best practices to alleviate the performance penalties due to contention, yet none of them *solve* the contention problem.
+
 
 
 Related topic: For guidance about handling hardware contention for the underlying shared computing resources, review the [Troubleshooting Hardware Resource Contention](troubleshooting-hardware-contention.md).
@@ -52,7 +55,7 @@ CockroachDB locking implementation highlights:
 
 
 
-##### Deadlock Detection and Resolution
+#### Deadlock Detection and Resolution
 
 Write-write conflicts may also lead to deadlocks when different transactions acquire locks in different orders and then wait for each other to release the locks.
 
@@ -232,7 +235,7 @@ CockroachDB is using a non-lock based optimistic concurrency control, acquiring 
 
 
 
-### 
+
 
 ### 3. Uncertainty Conflicts due to Possible Clock Skew Explained
 
@@ -272,13 +275,13 @@ For information about handling transactions that had been forced to restart, rev
 
 ### Identifying Contending Transactions
 
-##### Using DB Console to Identify most contending Transaction 
+#### Using DB Console to Identify most contending Transaction 
 
 <work in progress>
 
 [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/cockroachcloud/transactions-page.html)
 
-##### Using system tables (views)
+#### Using system tables (views)
 
 <work in progress>
 
@@ -314,11 +317,11 @@ The following is included for completeness, so operators are aware that
 -  `40001` errors, that are normally associated with contention conflicts, can also occur outside of a contention situation
 - While conflict resolution normally results in one party of a conflict yielding excution, it's possible that a conflict may result in more than one victim
 
-##### Two transactions in a deadlock can cause each other to restart (both fail with a retry error)
+#### Two transactions in a deadlock can cause each other to restart (both fail with a retry error)
 
 CockroachDB implementation is designed to not let two transactions both cancel each other, so the system would continue making progress on at least one of them. However it can't be completely rule it out. It would be difficult to make an example of that situation. It's esoteric and a peculiarity of the code paths.  is possible", as a friendly FYI.
 
-##### A transaction can get a retry error code spuriously
+#### A transaction can get a retry error code spuriously
 
 There are code paths that result in a retry error outside of a transaction conflict situation.
 
