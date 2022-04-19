@@ -325,7 +325,7 @@ CockroachDB implementation is designed to not let two transactions both cancel e
 
 There are code paths that result in a retry error outside of a transaction conflict situation.
 
-For example, a lease transfer clears the [timestamp cache](https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer.html#timestamp-cache) which is used to provide serializable guarantees (eliminate non-repetitive and phantom reads). If that happens at a specific point in a transaction's life, its commit will be rejected because there is no way to verify the earlier reads are repetitive.
+For example, a lease transfer clears the [timestamp cache](https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer.html#timestamp-cache) which is used to provide serializable guarantees (eliminate non-repetitive and phantom reads). If that happens at a specific point in a transaction's life, its commit will be rejected because there is no way to verify the earlier reads are repeateable.
 
 
 
