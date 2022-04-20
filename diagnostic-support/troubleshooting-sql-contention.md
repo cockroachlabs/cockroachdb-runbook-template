@@ -160,7 +160,7 @@ The leveling language of the SQL specification defines `SERIALIZABLE` as the hig
 
 Legacy DBMS-s commonly use a lock-based concurrency implementation, whereby enforcing serializability requires read and write locks.
 
-CockroachDB is using a non-lock based optimistic concurrency control, acquiring no read locks. To ensure serializability, CockroachDB *validates that the previous reads haven't changed at the commit time*. If reads are non-repeatable, the transaction in conflict is forced to restart.
+CockroachDB is using a non-lock based optimistic concurrency control, acquiring no read locks. To ensure serializability, CockroachDB *validates at the commit time that the previous reads haven't changed*. If reads are non-repeatable, the transaction in conflict is forced to restart.
 
 
 
@@ -169,8 +169,8 @@ CockroachDB is using a non-lock based optimistic concurrency control, acquiring 
 | Transaction 1 (multi-statement)                        | Transaction 2 (write, implicit)           |
 | ------------------------------------------------------ | ----------------------------------------- |
 | BEGIN;                                                 |                                           |
-| SELECT * FROM t WHERE v < 300000;                      |                                           |
-|                                                        | UPDATE t SET v=2 WHERE k=3;    `lock k=3` |
+| SELECT * FROM t WHERE v < 30000;                       |                                           |
+|                                                        | UPDATE t SET v=3 WHERE k=3;    `lock k=3` |
 | UPDATE t SET v=2 WHERE k=2;   `lock k=2`               |                                           |
 | COMMIT;                                                |                                           |
 | *`Error 40001: failed preemptive refresh (on commit)`* |                                           |
@@ -239,14 +239,13 @@ CockroachDB is using a non-lock based optimistic concurrency control, acquiring 
 
 ### 3. Uncertainty Conflicts due to Possible Clock Skew Explained
 
-In CockroachDB, every transaction starts and commits at a timestamp assigned by some CockroachDB node that receives the SQL.
-When choosing this timestamp the node does not rely on any particular synchronization with any other CockroachDB node. This becomes the timestamp of each tuple written by the aforementioned transaction.
+In CockroachDB, every transaction starts and commits at a timestamp assigned by a CockroachDB node that a client is connected to, called a gateway node. When choosing this timestamp the gateway node does not rely on synchronization with any other CockroachDB node. The gateway node uses its current time to assign a timestamp to each tuple written by this transaction.
 
-CockroachDB uses multi-version concurrency control (MVCC) - it stores multiple values for each tuple ordered by timestamp. A reader generally returns the latest tuple with a timestamp earlier than the reader's timestamp and can could ignore tuples with higher timestamps. But this is when a clock skew needs to be considered.
+CockroachDB uses multi-version concurrency control (MVCC) - it stores multiple value versions for each tuple, ordered by timestamp. A reader generally returns the latest tuple with a timestamp earlier than the reader's timestamp and can could ignore tuples with higher timestamps. This is when a potential clock skew needs to be considered.
 
 If a reader's timestamp is assigned by a CockroachDB node with a clock that is behind, it might encounter tuples with higher timestamps that were, in fact, committed before the reader's transaction but their timestamps were assigned by a clock that is ahead.
 
-Tuples with timestamps above the reader’s but within the `max-offset` are considered to be ambiguous as to whether they're in the past or the future of the reader. If such an uncertain tuple is encountered, the *reader transaction will generally be forced to restart* at a higher timestamp so all previously uncertain changes are definitely in the past.
+Tuples with timestamps above the reader’s, but within the `max-offset`, are considered to be ambiguous as to whether they're in the past or the future of the reader. If such an uncertain tuple is encountered, the *reader transaction will generally be forced to restart* at a higher timestamp so all previously uncertain changes are definitely in the past.
 
 For information about handling transactions that had been forced to restart, review the [transaction retries](../system-overview/tech-overview-trsansaction-retires.md) section.
 
@@ -264,8 +263,9 @@ For information about handling transactions that had been forced to restart, rev
 
 > ✅ **Remedy: Use [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md) transactions wherever possible**
 >
-> - In case of a conflict, retried automatically on the gateway node (that originated the transaction)
-> - Eliminates an unnecessary additional client<->gateway network round trips
+> - Uncertainty conflicts are unavoidable and the strategy to minimize their negative effects on transaction response time is to give the server-side automatic retires the best chance vs. client-side retries
+> - In case of a conflict, implicit transactions are retried automatically on the gateway node (that originated the transaction)
+> - Eliminates unnecessary additional client<->gateway network round trips
 > - Allows single-range txns to use a streamlined 1-phase commit fast-path
 > - Hold locks for less time
 
@@ -273,7 +273,9 @@ For information about handling transactions that had been forced to restart, rev
 
 
 
-### Identifying Contending Transactions
+### Troubleshooting Performance Issues due to Workload Contention
+
+The 
 
 #### Using DB Console to Identify Top Contending Transactions
 
