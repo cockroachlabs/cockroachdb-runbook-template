@@ -45,10 +45,10 @@ CockroachDB implements only one kind of lock - an *exclusive write lock* to mana
 CockroachDB locking implementation highlights:
 
 - Writes acquire locks
-- `SELECT FOR UPDATE` acquire locks
+- `SELECTs ... FOR UPDATE`, just as writes, acquire locks
+- Writes block reads and writes [from other transactions]
 - Reads do not acquire locks
 - Reads do not block reads or writes [from other transactions]
-- Writes block reads and writes [from other transactions]
 - All blocked statements are waiting indefinitely in the same [queue](https://www.cockroachlabs.com/docs/v21.2/architecture/transaction-layer.html#txnwaitqueue) until the blocking transaction releases the lock (aside from situations when a waiting transaction is forcefully disrupted externally)
 - Locks are released when the holding transaction is closed (committed or rolled back)
 
@@ -141,7 +141,7 @@ When transactions in a deadlock have the same priority, which transaction is abo
 > ✅ **Remedy: Use [historical](https://www.cockroachlabs.com/docs/v21.2/as-of-system-time.html) queries whenever possible**
 > - Historical queries never wait on anything and never block anything
 > - Best possible performance - served by the nearest replica
-> - Only if the application can use data that is 5 second old or older
+> - Only if an application can use data that is 5 second old or older
 
 
 
@@ -275,13 +275,15 @@ For information about handling transactions that had been forced to restart, rev
 
 ### Identifying Contending Transactions
 
-#### Using DB Console to Identify most contending Transaction 
+#### Using DB Console to Identify Top Contending Transactions
 
 ***`UNDER CONSTRUCTION`***
 
 [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/cockroachcloud/transactions-page.html)
 
-#### Using system tables (views)
+
+
+#### Using System Tables (Views) to Identify Top Contending Transactions
 
 ***`UNDER CONSTRUCTION`***
 
