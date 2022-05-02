@@ -478,7 +478,7 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 ### Remediation of Locking Conflicts
 
-<UNDER CONSTRUCTION>
+**< UNDER CONSTRUCTION >**
 
 
 
@@ -518,7 +518,7 @@ If a &quot;fail fast&quot; approach fits the application design, consider limiti
 
 ### Remediation of Transaction Isolation Conflicts
 
-<UNDER CONSTRUCTION>
+**< UNDER CONSTRUCTION >**
 
 
 
