@@ -476,13 +476,9 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 ## 5. Contention Remediation
 
+### Remediation of Locking Conflicts
 
-
-> ✅ **Columns families can eliminate conflicts**
->
-> - Contention happens at the key level
-> - Column families split a single row into multiple keys (KV pairs)
-> - Transactions operating on disjoint column families will not conflict
+<UNDER CONSTRUCTION>
 
 
 
@@ -494,9 +490,19 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 
 
-> ✅ **If conflicts are unavoidable - fail fast**
+
+
+> ✅ **Columns families can eliminate conflicts**
 >
-> - TODO 
+> - Contention happens at the key level
+> - Column families split a single row into multiple keys (KV pairs)
+> - Transactions operating on disjoint column families will not conflict
+
+
+
+
+
+> ✅ **If conflicts are unavoidable - fail fast**
 >
 > - This PR introduces a new `kv.lock_table.maximum_lock_wait_queue_length` cluster setting, which controls the maximum length of a lock wait-queue that requests are willing to enter and wait in. The setting can be used to ensure some level of quality-of-service under severe per-key contention. If set to a non-zero value and an existing lock wait-queue is already equal to or exceeding this length, requests will be rejected eagerly instead of entering the queue and waiting.
 >
@@ -504,32 +510,15 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 
 
+If a &quot;fail fast&quot; approach fits the application design, consider using pessimistic locking with [SELECT FOR UPDATE … NOWAIT](https://www.cockroachlabs.com/docs/stable/select-for-update#wait-policies). It can reduce or prevent failures late in a transaction's life (e.g. at the commit time), by returning an error early in a contention situation if a row cannot be locked immediately.
 
-> ✅ **Use [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md) transactions wherever possible**
->
-> - Uncertainty conflicts are unavoidable and the strategy to minimize their negative effects on transaction response time is to give the server-side automatic retires the best chance vs. client-side retries
-> - In case of a conflict, implicit transactions are retried automatically on the gateway node (that originated the transaction)
-> - Eliminates unnecessary additional client<->gateway network round trips
-> - Allows single-range txns to use a streamlined 1-phase commit fast-path
-> - Hold locks for less time
+If a &quot;fail fast&quot; approach fits the application design, consider limiting the maximum wait queue size with the cluster setting  [_kv.lock\_table.maximum\_lock\_wait\_queue\_length_](https://github.com/cockroachdb/cockroach/pull/66146). It can provide a greater response time predictability in a severe per-key contention. If an existing lock wait-queue is already longer than the setting value, a new transaction will be quickly rejected instead of entering the queue and waiting.
 
 
 
+### Remediation of Transaction Isolation Conflicts
 
-> ✅ **Reduce a probability of uncertainty conflicts **
->
-> - Uncertainty conflicts are unavoidable, however the probability of these conflicts can be reduced and the overhead of handling them can be minimized to negligible levels
-> - The cluster's uncertainty window is configurable. Operators can reduce a probability of uncertainty conflicts by reducing the cluster's [--max-offset](https://www.cockroachlabs.com/docs/v21.2/cockroach-start.html#flags)  setting.
-> - Reducing the `max-offset` does not guarantee a measurable improvement. With a smaller uncertainty window, a probability of uncertainty conflicts is lower. If uncertainty retries are observed with a 500 ms  `max-offset`, it's reasonable to expect fewer retries with a setting of 250 ms.
-> - The `max-offset` setting can be safely reduced from the current default 500ms to 250ms or below, if the clock synchronization relies on robust networking and NTP sources & configuration
-
-
-
-> ✅ **Avoid Read-Modify-Write pattern whenever possible**
->
-> - Read-Modify-Write transaction design pattern is a "magnet" for isolation conflicts, nearly 
-> - It may be possible to avoid reading a column value, modify and write it back by pushing the expression into an SQL update statement, so the transaction becomes [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md), which has the best possible concurrency characteristics.
-> - For example,  `UPDATE t SET v=v+1 WHERE k=2;` instead of increasing a counter in the application code.
+<UNDER CONSTRUCTION>
 
 
 
@@ -550,10 +539,47 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 
 
+> ✅ **Avoid Read-Modify-Write pattern whenever possible**
+>
+> - Read-Modify-Write transaction design pattern is a "magnet" for isolation conflicts, nearly 
+> - It may be possible to avoid reading a column value, modify and write it back by pushing the expression into an SQL update statement, so the transaction becomes [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md), which has the best possible concurrency characteristics.
+> - For example,  `UPDATE t SET v=v+1 WHERE k=2;` instead of increasing a counter in the application code.
 
 
 
-### Useful Resources
+
+
+### Remediation of Uncertainty Interval Conflicts
+
+By design, CockroachDB handles an inevitable clock skew by restarting reads when an uncertainty interval conflict occurs. Uncertainty conflicts *can not* be avoided, but they only add a negligible or no performance overheads in most workloads. They are typically handled efficiently as a statement level automatic retry on the server in the same transaction.
+
+In rare circumstances, when an automatic server side retry is not possible and results in a `40001` client side retry, or when server side retries are numerous, operators need to take actions to reduce a negative influence of uncertainty conflicts on cluster performance. Although these conflicts are unavoidable, their probability can be reduced and the overhead of handling them can be minimized to negligible levels.
+
+
+
+
+> ✅ **Reduce a probability of uncertainty conflicts **
+>
+> - The cluster's uncertainty window is configurable. Operators can reduce a probability of uncertainty conflicts by reducing the cluster's [--max-offset](https://www.cockroachlabs.com/docs/v21.2/cockroach-start.html#flags)  setting.
+> - The `max-offset` setting can be safely reduced from the current default 500ms to 250ms or below, if the clock synchronization relies on robust networking and NTP sources & configuration.
+> - Reducing the `max-offset` does not guarantee a measurable improvement. With a smaller uncertainty window, a probability of uncertainty conflicts is lower. If uncertainty retries are observed with a 500 ms  `max-offset`, it's reasonable to expect fewer retries with a 250 ms  `max-offset`.
+
+
+
+
+> ✅ **Use [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md) transactions wherever possible**
+>
+> - In case of a conflict, implicit transactions are retried automatically on the gateway (the node that originated the transaction)
+> - Eliminate unnecessary additional client<->gateway network round trips
+> - Bring additional performance benefits
+>   - Hold locks for less time
+>   - Allow single-range txns to use a streamlined 1-phase commit fast-path
+
+
+
+
+
+## Useful Resources
 
 - [Troubleshooting Overview](https://www.cockroachlabs.com/docs/stable/troubleshooting-overview.html)
 - [CockroachDB Transaction Layer](https://www.cockroachlabs.com/docs/v21.2/architecture/transaction-layer.html)
