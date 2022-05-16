@@ -488,41 +488,40 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 ### Remediation of Locking Conflicts
 
-**< UNDER CONSTRUCTION >**
+Locking conflicts are a natural artifact when business requirements are calling for concurrent data changes. Realistically, locking conflicts are unavoidable. The locking conflicts, however, are resolved efficiently with regard to the underlying resource utilization. When blocked transactions are waiting on a lock, they are not consuming CPU, disk, or network resources.
+
+Remediation is required when locking conflicts are too numerous, resulting in a significant increase in response time and/or decrease in throughput. Remediation of locking conflicts is typically about giving up some functionality in exchange for a reduction in locking contention, specifically: 
 
 
 
-> ✅ **Use [historical](https://www.cockroachlabs.com/docs/v21.2/as-of-system-time.html) queries whenever possible**
+> ✅  **If using [historical](https://www.cockroachlabs.com/docs/v21.2/as-of-system-time.html) queries fits the application design**
 >
+> - Only if an application can use data that is 5 seconds old or older
+> - Primarily benefits read-only transactions
 > - Historical queries operate below [closed timestamps](https://www.cockroachlabs.com/docs/v21.2/architecture/transaction-layer#closed-timestamps) and therfore have perfect concurrency characteristics - they never wait on anything and never block anything
 > - Best possible performance - served by the nearest replica
-> - Only if an application can use data that is 5 second old or older
 
 
 
-> ✅ **Columns families can eliminate conflicts**
+> ✅ **If &quot;fail fast&quot; fits the application design**
 >
-> - Contention happens at the key level
+> - &quot;Fail fast&quot; could be a reasonable protective measure in the application to handle "hot update key" situations, for example when an application needs to be able to handle an arbitrary large surge of updates on the same key.
+> - The most direct method of "failing fast" is using pessimistic locking with [SELECT FOR UPDATE … NOWAIT](https://www.cockroachlabs.com/docs/stable/select-for-update#wait-policies). It can reduce or prevent failures late in a transaction's life (e.g. at the commit time), by returning an error early in a contention situation if a row cannot be locked immediately.
+> - A more "buffered fail fast&quot; approach would be to control the maximum length of a lock wait-queue that requests are willing to enter and wait in, with the cluster setting  [_kv.lock\_table.maximum\_lock\_wait\_queue\_length_](https://github.com/cockroachdb/cockroach/pull/66146). It can provide some level of quality-of-service with a response time predictability in a severe per-key contention. If set to a non-zero value and an existing lock wait-queue is already equal to or exceeding this length, requests will be rejected eagerly instead of entering the queue and waiting.
+
+
+
+> ✅ **Columns families can reduce conflicts**
+>
+> - Conflicts happen at key level
 > - Column families split a single row into multiple keys (KV pairs)
 > - Transactions operating on disjoint column families will not conflict [TODO: the correct statement is more nuanced. All columns in the column families that doesn't include the PK must be NOT NULL for this statement to be true]
 
 
 
-> ✅ **If conflicts are unavoidable - fail fast**
->
-> - If a &quot;fail fast&quot; approach fits the application design, consider using pessimistic locking with [SELECT FOR UPDATE … NOWAIT](https://www.cockroachlabs.com/docs/stable/select-for-update#wait-policies). It can reduce or prevent failures late in a transaction's life (e.g. at the commit time), by returning an error early in a contention situation if a row cannot be locked immediately.
->
-> - If a &quot;fail fast&quot; approach fits the application design, consider limiting the maximum wait queue size with the cluster setting  [_kv.lock\_table.maximum\_lock\_wait\_queue\_length_](https://github.com/cockroachdb/cockroach/pull/66146). It can provide a greater response time predictability in a severe per-key contention. If an existing lock wait-queue is already longer than the setting value, a new transaction will be quickly rejected instead of entering the queue and waiting.
->
-> - a new `kv.lock_table.maximum_lock_wait_queue_length` cluster setting, which controls the maximum length of a lock wait-queue that requests are willing to enter and wait in. The setting can be used to ensure some level of quality-of-service under severe per-key contention. If set to a non-zero value and an existing lock wait-queue is already equal to or exceeding this length, requests will be rejected eagerly instead of entering the queue and waiting.
->
->   Before this change, the lock-table's wait-queues had no limit on the number of writers that could be queued on a given key. This could lead to unbounded queueing and diminishing quality of service for all writers as the queues built up. It could also leave to starvation (i.e. zero throughput) when requests had a timeout that fires before any single request can get to the head of the queue. This was all especially bad with high replication latency in multi-region clusters, as locks are held for the duration of a consensus replication round.
-
-
-
 ### Remediation of Transaction Isolation Conflicts
 
-Transaction Isolation Conflicts may have the largest negative impact on workload performance among all types of contention because they result in a `40001` client side retry, whereby the work  done by the preceding transaction is effectively thrown away. [TODO: there are nuances related to the previous sentence, a retry logic [can be optimized](https://www.cockroachlabs.com/docs/v21.2/savepoint.html#savepoints-for-client-side-transaction-retries) to not throw away the entire transaction work. Unclear if this is worth emphasizing.]
+Transaction Isolation Conflicts may have the largest negative impact on workload performance among all types of contention because they result in a `40001` client side retry, whereby the work  done by the preceding transaction is effectively thrown away. [TODO: there are nuances wrt the previous sentence; a retry logic [can be optimized](https://www.cockroachlabs.com/docs/v21.2/savepoint.html#savepoints-for-client-side-transaction-retries) to not throw away the entire transaction work. Unclear if this is worth emphasizing.]
 
 Several remediation techniques are available to minimize the impact of isolation conflicts, listed below in the order of a perceived positive impact, most impactful first.
 
@@ -555,7 +554,7 @@ In a large number of situations, isolation conflicts could be avoided:
 
 ##### Use pessimistic locking
 
-The client side `40001` retires can be avoided by using pessimistic locking early in a transaction. This approach is effectively a simple-to-implement trade-off of the "expensive" client side `40001` retires for more efficient waits on a lock. While this technique lessens the impact of isolation conflict on the workload performance, it does not eliminate the existing contention but merely makes the contention handling more efficient. As was noted earlier, the isolation conflicts can often be avoided by transaction design, which would be an ultimate solution.
+The client side `40001` retires can be avoided by using pessimistic locking early in a transaction. This approach is effectively a simple-to-implement trade-off of the "expensive" client side `40001` retires for more efficient waits on a lock. While this technique lessens the impact of isolation conflict on the workload performance, it does not eliminate the existing contention but merely replaces the isolation conflicts with locking conflicts that are, as discussed earlier, are resolved more efficiently. At this As was noted earlier, the isolation conflicts can often be avoided by transaction design, which would be an ultimate solution.
 
 
 
