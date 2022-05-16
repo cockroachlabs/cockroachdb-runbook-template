@@ -8,7 +8,7 @@
 
 ## About Workload Contention
 
-This section includes the *background information, examples, troubleshooting technique and remediation ideas* related to *SQL workload* contention matters. It provides a CockroachDB practitioner with essential knowledge and remediation points about possible workload contention scenarios, including:
+This section includes the *background information, examples, troubleshooting technique and remediation ideas* related to *SQL workload* contention. It provides a CockroachDB practitioner with essential knowledge and remediation points for possible contention scenarios, including:
 
 1. Locking conflicts
 2. Transaction isolation conflicts
@@ -16,8 +16,8 @@ This section includes the *background information, examples, troubleshooting tec
 
 To resolve any transaction contention, a database takes one of the two available actions:
 
-- either allow the blocked transactions to *wait*, or
-- to *force* one of the conflicting transactions to *re-start*
+- either allow the blocked transactions to *wait*,
+- or *force* one of the conflicting transactions to *re-start*
 
 Sections below detail how CockroachDB handles the most common concurrency conflicts with either of the methods above.
 
@@ -236,7 +236,7 @@ For information about handling transactions that had been forced to restart, rev
 | -- execute in a loop, concurrently with Txn 2                | -- execute in a loop, concurrently with Txn 1 |
 | SELECT * FROM t WHERE k=1;                                   | UPDATE t v=111 WHERE k=1;                     |
 | *`Implict reads will practically always succeed`*            | *`Writes will always succeed`*                |
-| *`Occasionally reads will delayed by automatic retries on the server`* |                                               |
+| *`Occasionally reads will take longer due to automatic retries`* |                                               |
 | *`Shown in the Retry column in DB Console Transactions page`* |                                               |
 
 
@@ -264,7 +264,17 @@ For example, a lease transfer clears the [timestamp cache](https://www.cockroach
 
 
 
-## 5. Contention Troubleshooting Steps
+## 5. Contention Aggravating Factors
+
+One of the main factors making a negative impact of contention on the workload more pronounced is a "loose" multi-statement transaction design, when an application is doing a measurable amount non-database work while in an open transaction. A "loose" transaction may be holding a lock longer than absolutely necessary, thus increasing the wait times of transactions that are blocked on that lock. Or increasing the time between executions of individual statements in a transaction, thus increasing a probability of isolation conflicts.
+
+For a high level ***visual assessment***, compare the [Open SQL Transactions](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#open-sql-transactions) and the [Active SQL Statements](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#active-sql-statements) graphs in the the [SQL Dashboard](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html) side by side. If the number of active statements track the number of open transactions, it means each open transaction is executing a statement, and it suggests a good transaction logic implementation. If the number of active statements lags the number of open transactions, it suggests that some open transactions are doing non-database work while keeping a transaction open, and it should probably be investigated.
+
+#### 
+
+
+
+## 6. Contention Troubleshooting Steps
 
 A contention investigation is practically always prompted by a performance complain, with or without `40001` error observations. The main concern is commonly a worsened response time, caused by the two attributes of contention - waits and/or retries - directly contributing to its increase.
 
@@ -416,9 +426,9 @@ Actionable details include:
 - the contention point (key)
 
 The detailed instrumentation of contention conflicts is a new feature in v22.1 and is available for locking conflicts only. A history of contention events is captured in the `crdb_internal.transaction_contention_events`  system table that contains transaction fingerprint IDs for both blocking and
-waiting transactions, and the contention key.  [TODO: (1) discover a way to decode the txn fingerprint IDs and report transactions' statements and (2) joining with crdb_internal.transaction_statistics vs crdb_internal.cluster_transaction_statistics.]
+waiting transactions, and the contention key.  [TODO: (1) discover a way to decode the txn fingerprint IDs and report transactions' statements and (2) joining with `crdb_internal.transaction_statistics` vs `crdb_internal.cluster_transaction_statistics`.]
 
-To identify lock conflicts details in the last 30 minutes, run the following query:
+For example, to identify lock conflicts details in the last 30 minutes, run the following query:
 
 ```sql
 -- Set the current database to the database in which the potential contention events are being investigated, e.g. 
@@ -474,7 +484,7 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 
 
-## 5. Contention Remediation
+## 7. Contention Remediation
 
 ### Remediation of Locking Conflicts
 
@@ -490,35 +500,76 @@ AND collection_ts >= NOW() - INTERVAL '30 MINUTES'
 
 
 
-
-
 > ✅ **Columns families can eliminate conflicts**
 >
 > - Contention happens at the key level
 > - Column families split a single row into multiple keys (KV pairs)
-> - Transactions operating on disjoint column families will not conflict
-
-
+> - Transactions operating on disjoint column families will not conflict [TODO: the correct statement is more nuanced. All columns in the column families that doesn't include the PK must be NOT NULL for this statement to be true]
 
 
 
 > ✅ **If conflicts are unavoidable - fail fast**
 >
-> - This PR introduces a new `kv.lock_table.maximum_lock_wait_queue_length` cluster setting, which controls the maximum length of a lock wait-queue that requests are willing to enter and wait in. The setting can be used to ensure some level of quality-of-service under severe per-key contention. If set to a non-zero value and an existing lock wait-queue is already equal to or exceeding this length, requests will be rejected eagerly instead of entering the queue and waiting.
+> - If a &quot;fail fast&quot; approach fits the application design, consider using pessimistic locking with [SELECT FOR UPDATE … NOWAIT](https://www.cockroachlabs.com/docs/stable/select-for-update#wait-policies). It can reduce or prevent failures late in a transaction's life (e.g. at the commit time), by returning an error early in a contention situation if a row cannot be locked immediately.
+>
+> - If a &quot;fail fast&quot; approach fits the application design, consider limiting the maximum wait queue size with the cluster setting  [_kv.lock\_table.maximum\_lock\_wait\_queue\_length_](https://github.com/cockroachdb/cockroach/pull/66146). It can provide a greater response time predictability in a severe per-key contention. If an existing lock wait-queue is already longer than the setting value, a new transaction will be quickly rejected instead of entering the queue and waiting.
+>
+> - a new `kv.lock_table.maximum_lock_wait_queue_length` cluster setting, which controls the maximum length of a lock wait-queue that requests are willing to enter and wait in. The setting can be used to ensure some level of quality-of-service under severe per-key contention. If set to a non-zero value and an existing lock wait-queue is already equal to or exceeding this length, requests will be rejected eagerly instead of entering the queue and waiting.
 >
 >   Before this change, the lock-table's wait-queues had no limit on the number of writers that could be queued on a given key. This could lead to unbounded queueing and diminishing quality of service for all writers as the queues built up. It could also leave to starvation (i.e. zero throughput) when requests had a timeout that fires before any single request can get to the head of the queue. This was all especially bad with high replication latency in multi-region clusters, as locks are held for the duration of a consensus replication round.
 
 
 
-If a &quot;fail fast&quot; approach fits the application design, consider using pessimistic locking with [SELECT FOR UPDATE … NOWAIT](https://www.cockroachlabs.com/docs/stable/select-for-update#wait-policies). It can reduce or prevent failures late in a transaction's life (e.g. at the commit time), by returning an error early in a contention situation if a row cannot be locked immediately.
-
-If a &quot;fail fast&quot; approach fits the application design, consider limiting the maximum wait queue size with the cluster setting  [_kv.lock\_table.maximum\_lock\_wait\_queue\_length_](https://github.com/cockroachdb/cockroach/pull/66146). It can provide a greater response time predictability in a severe per-key contention. If an existing lock wait-queue is already longer than the setting value, a new transaction will be quickly rejected instead of entering the queue and waiting.
-
-
-
 ### Remediation of Transaction Isolation Conflicts
 
-**< UNDER CONSTRUCTION >**
+Transaction Isolation Conflicts may have the largest negative impact on workload performance among all types of contention because they result in a `40001` client side retry, whereby the work  done by the preceding transaction is effectively thrown away. [TODO: there are nuances related to the previous sentence, a retry logic [can be optimized](https://www.cockroachlabs.com/docs/v21.2/savepoint.html#savepoints-for-client-side-transaction-retries) to not throw away the entire transaction work. Unclear if this is worth emphasizing.]
+
+Several remediation techniques are available to minimize the impact of isolation conflicts, listed below in the order of a perceived positive impact, most impactful first.
+
+##### Avoid Isolation Conflicts by Design
+
+In a large number of situations, isolation conflicts could be avoided:
+
+- If an application is leveraging a development framework, follow the best practices for that framework. 
+- If the application's custom data access layer implements the transaction logic, pay due attention to serializable isolation realities.
+
+
+
+> ✅ **Follow the best practices for data for development frameworks**
+>
+> - <Under construction>
+> - For Spring:
+>   - Use [Spring Annotations](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb) to bring clarity to transaction management
+>   - Eagerly fetching too much (excessive cross joins)
+>   - Lazy fetching too little (excessive amounts of queries)
+
+
+
+> ✅ **Avoid Read-Modify-Write pattern whenever possible**
+>
+> - Read-Modify-Write transaction design pattern is a "magnet" for isolation conflicts
+> - It may be possible to avoid reading a column value, modify and write it back by pushing the expression into an SQL update statement, so the transaction becomes [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md), which has the best possible concurrency characteristics.
+> - For example,  `UPDATE t SET v=v+1 WHERE k=2;` instead of increasing a counter in the application code.
+
+
+
+##### Use pessimistic locking
+
+The client side `40001` retires can be avoided by using pessimistic locking early in a transaction. This approach is effectively a simple-to-implement trade-off of the "expensive" client side `40001` retires for more efficient waits on a lock. While this technique lessens the impact of isolation conflict on the workload performance, it does not eliminate the existing contention but merely makes the contention handling more efficient. As was noted earlier, the isolation conflicts can often be avoided by transaction design, which would be an ultimate solution.
+
+
+
+> ✅ **If conflicts in a multi-statement transaction are unavoidable - use pessimistic locking**
+>
+> - Use `SELECT … FOR UPDATE` to conflicts earlier in the transaction
+> - Block earlier, before reads that could be invalidated later and result in a costly retry
+> - Note: `SELECT … FOR UPDATE` can really help by letting you trade the costly client-side retries for more efficient waits, but it does not *solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for the contention problem.
+
+
+
+##### Minimize the scope of reads
+
+Minimizing the number of keys in scope for SELECTs reduces the probability of isolation conflicts
 
 
 
@@ -531,27 +582,9 @@ If a &quot;fail fast&quot; approach fits the application design, consider limiti
 
 
 
-> ✅ **If conflicts in a multi-statement transaction are unavoidable - conflict early**
->
-> - Use `SELECT … FOR UPDATE` to conflicts earlier in the transaction
-> - Block earlier, before reads that could be invalidated later and result in a costly retry
-> - Note: `SELECT … FOR UPDATE` can really help by letting you trade the costly client-side retries for more efficient waits, but it does not *solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for the contention problem.
-
-
-
-> ✅ **Avoid Read-Modify-Write pattern whenever possible**
->
-> - Read-Modify-Write transaction design pattern is a "magnet" for isolation conflicts, nearly 
-> - It may be possible to avoid reading a column value, modify and write it back by pushing the expression into an SQL update statement, so the transaction becomes [implicit](../system-overview/tech-overview-trsansaction-implicit-explicit.md), which has the best possible concurrency characteristics.
-> - For example,  `UPDATE t SET v=v+1 WHERE k=2;` instead of increasing a counter in the application code.
-
-
-
-
-
 ### Remediation of Uncertainty Interval Conflicts
 
-By design, CockroachDB handles an inevitable clock skew by restarting reads when an uncertainty interval conflict occurs. Uncertainty conflicts *can not* be avoided, but they only add a negligible or no performance overheads in most workloads. They are typically handled efficiently as a statement level automatic retry on the server in the same transaction.
+By design, CockroachDB handles an inevitable clock skew by restarting reads when an uncertainty interval conflict occurs. Uncertainty conflicts *can not* be avoided, but they only add a negligible performance overheads when handled efficiently in the same transaction as an automatic retry on the server.
 
 In rare circumstances, when an automatic server side retry is not possible and results in a `40001` client side retry, or when server side retries are numerous, operators need to take actions to reduce a negative influence of uncertainty conflicts on cluster performance. Although these conflicts are unavoidable, their probability can be reduced and the overhead of handling them can be minimized to negligible levels.
 
