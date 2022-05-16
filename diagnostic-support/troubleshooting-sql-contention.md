@@ -1,4 +1,4 @@
-**< This is the First Draft >**
+**< First Draft >**
 
 
 
@@ -268,9 +268,9 @@ For example, a lease transfer clears the [timestamp cache](https://www.cockroach
 
 One of the main factors making a negative impact of contention on the workload more pronounced is a "loose" multi-statement transaction design, when an application is doing a measurable amount non-database work while in an open transaction. A "loose" transaction may be holding a lock longer than absolutely necessary, thus increasing the wait times of transactions that are blocked on that lock. Or increasing the time between executions of individual statements in a transaction, thus increasing a probability of isolation conflicts.
 
-For a high level ***visual assessment***, compare the [Open SQL Transactions](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#open-sql-transactions) and the [Active SQL Statements](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#active-sql-statements) graphs in the the [SQL Dashboard](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html) side by side. If the number of active statements track the number of open transactions, it means each open transaction is executing a statement, and it suggests a good transaction logic implementation. If the number of active statements lags the number of open transactions, it suggests that some open transactions are doing non-database work while keeping a transaction open, and it should probably be investigated.
+For a high level ***visual assessment***, compare the [Open SQL Transactions](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#open-sql-transactions) and the [Active SQL Statements](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#active-sql-statements) graphs in the the [SQL Dashboard](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html) side by side. If the number of active statements track the number of open transactions, it means each open transaction is executing a statement, and that would suggest a good transaction logic implementation. Conversely, if the number of active statements lags the number of open transactions, it would suggest that some open transactions are doing non-database work while keeping a transaction open, which should probably be investigated.
 
-#### 
+
 
 
 
