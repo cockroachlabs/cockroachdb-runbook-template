@@ -560,15 +560,15 @@ The client side `40001` retires can be avoided by using pessimistic locking earl
 
 > ✅ **If conflicts in a multi-statement transaction are unavoidable - use pessimistic locking**
 >
-> - Use `SELECT … FOR UPDATE` to conflicts earlier in the transaction
-> - Block earlier, before reads that could be invalidated later and result in a costly retry
-> - Note: `SELECT … FOR UPDATE` can really help by letting you trade the costly client-side retries for more efficient waits, but it does not *solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for the contention problem.
+> - Use `SELECT … FOR UPDATE` to conflict earlier in the transaction.
+> - Blocking earlier on a read eliminates an opportunity for a read invalidation later, which would  result in a costly retry.
+> - Note: `SELECT … FOR UPDATE` helps by letting you trade the costly client-side retries for more efficient waits, yet it does *not solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for the contention problem.
 
 
 
 ##### Minimize the scope of reads
 
-Minimizing the number of keys in scope for SELECTs reduces the probability of isolation conflicts
+Minimizing the number of keys in scope for SELECTs reduces the probability of isolation conflicts.
 
 
 
