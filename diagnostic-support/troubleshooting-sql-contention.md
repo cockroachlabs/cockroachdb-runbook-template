@@ -590,7 +590,7 @@ In rare circumstances, when an automatic server side retry is not possible and r
 
 
 
-> ✅ **Reduce a probability of uncertainty conflicts **
+> ✅ **Reduce a probability of uncertainty conflicts**
 >
 > - The cluster's uncertainty window is configurable. Operators can reduce a probability of uncertainty conflicts by reducing the cluster's [--max-offset](https://www.cockroachlabs.com/docs/v21.2/cockroach-start.html#flags)  setting.
 > - The `max-offset` setting can be safely reduced from the current default 500ms to 250ms or below, if the clock synchronization relies on robust networking and NTP sources & configuration.
