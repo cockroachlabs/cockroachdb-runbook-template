@@ -536,7 +536,7 @@ In a large number of situations, isolation conflicts could be avoided:
 
 > ✅ **Follow the best practices for data for development frameworks**
 >
-> - **<Under construction>**
+> - **< Under construction >**
 > - For Spring:
 >   - Use [Spring Annotations](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb) to bring clarity to transaction management
 >   - Eagerly fetching too much (excessive cross joins)
