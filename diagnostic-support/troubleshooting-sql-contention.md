@@ -27,10 +27,10 @@ Contention scenario illustrations in this section include both [implicit and exp
 
 
 > ✅  **Minimize contention by design!**
-> - Contention is not intrinsically "bad". Contention is rather a reality of business requirements.
+> - Contention is not intrinsically "bad". Some kinds of contention is unavoidable, for example when it represents a reality of business requirements. Yet there is also preventable contention that can be eliminated entirely with a considerate schema and transaction design.
 > - Databases are purpose-built to manage concurrent access to data. This section provides the insights into how CockroachDB manages contention.
 > - Contention needs to be addressed only when it manifests itself as "bad performance", with or without transaction errors such as `40001`.
-> - As long as an application requires concurrent access to data, contention can't be eliminated. There are techniques to *minimize* the performance penalties due to contention and they are are covered in Remediation chapter. Yet the most effective *solution* to a "contention problem" will always be a data model (schema) and transaction logic design that minimizes the opportunities for contention in the first place.
+> - As long as an application requires concurrent access to data, all contention can't be eliminated. There are techniques to *minimize* the performance penalties due to contention and they are are covered in Remediation chapter. Yet the most effective *solution* to a "contention problem" will always be a data model (schema) and transaction logic design that minimizes the opportunities for contention in the first place.
 
 
 
