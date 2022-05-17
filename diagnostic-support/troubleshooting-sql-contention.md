@@ -536,7 +536,7 @@ In a large number of situations, isolation conflicts could be avoided:
 
 > ✅ **Follow the best practices for data for development frameworks**
 >
-> - <Under construction>
+> - **<Under construction>**
 > - For Spring:
 >   - Use [Spring Annotations](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb) to bring clarity to transaction management
 >   - Eagerly fetching too much (excessive cross joins)
@@ -554,7 +554,7 @@ In a large number of situations, isolation conflicts could be avoided:
 
 ##### Use pessimistic locking
 
-The client side `40001` retires can be avoided by using pessimistic locking early in a transaction. This approach is effectively a simple-to-implement trade-off of the "expensive" client side `40001` retires for more efficient waits on a lock. While this technique lessens the impact of isolation conflict on the workload performance, it does not eliminate the existing contention but merely replaces the isolation conflicts with locking conflicts that are, as discussed earlier, are resolved more efficiently. At this As was noted earlier, the isolation conflicts can often be avoided by transaction design, which would be an ultimate solution.
+The client side `40001` retires can be avoided by using pessimistic locking early in a transaction. This approach is effectively a simple-to-implement trade-off of the "expensive" client side `40001` retires for more efficient waits on a lock. While this technique lessens the impact of isolation conflict on the workload performance, it does not eliminate the existing contention. It merely replaces the isolation conflicts with locking conflicts that are, as discussed earlier, resolved more efficiently. Users are encouraged to scrutinize the logical design beyond switching to pessimistic locking, since the isolation conflicts can often be avoided by transaction refactoring, which would be an ultimate solution.
 
 
 
@@ -562,7 +562,7 @@ The client side `40001` retires can be avoided by using pessimistic locking earl
 >
 > - Use `SELECT … FOR UPDATE` to conflict earlier in the transaction.
 > - Blocking earlier on a read eliminates an opportunity for a read invalidation later, which would  result in a costly retry.
-> - Note: `SELECT … FOR UPDATE` helps by letting you trade the costly client-side retries for more efficient waits, yet it does *not solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for the contention problem.
+> - Note: `SELECT … FOR UPDATE` helps by letting you trade the costly client-side retries for more efficient waits, yet it does *not solve* the contention problem. Only transaction refactoring that eliminates contention by design is a *solution* for this contention problem.
 
 
 
@@ -617,5 +617,4 @@ In rare circumstances, when an automatic server side retry is not possible and r
 - [CockroachDB Transaction Layer](https://www.cockroachlabs.com/docs/v21.2/architecture/transaction-layer.html)
 - [Troubleshoot Cluster Setup](https://www.cockroachlabs.com/docs/stable/cluster-setup-troubleshooting.html)
 - [Troubleshoot Statement Behavior](https://www.cockroachlabs.com/docs/stable/query-behavior-troubleshooting.html)
-- [Blog: What is Database Contention](https://www.cockroachlabs.com/blog/what-is-database-contention/)
-
+- [Blog: Spring Annotations for CockroachDB](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb)
