@@ -513,9 +513,9 @@ Remediation is required when locking conflicts are too numerous, resulting in a 
 
 > ✅ **Columns families can reduce conflicts**
 >
-> - Conflicts happen at key level
-> - Column families split a single row into multiple keys (KV pairs)
-> - Transactions operating on disjoint column families will not conflict [TODO: the correct statement is more nuanced. All columns in the column families that doesn't include the PK must be NOT NULL for this statement to be true]
+> - Conflicts happen at key level.
+> - Column families split a single row into multiple keys (KV pairs).
+> - Transactions operating on disjoint column families will not conflict (except an edge case when *all* columns in a non-primary column family are NULL-able).
 
 
 
