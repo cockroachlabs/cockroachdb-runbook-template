@@ -30,7 +30,7 @@ Contention scenario illustrations in this section include both [implicit and exp
 > - Contention is not intrinsically "bad". Some kinds of contention is unavoidable, for example when it represents a reality of business requirements. Yet there is also preventable contention that can be eliminated entirely with a considerate schema and transaction design.
 > - Databases are purpose-built to manage concurrent access to data. This section provides the insights into how CockroachDB manages contention.
 > - Contention needs to be addressed only when it manifests itself as "bad performance", with or without transaction errors such as `40001`.
-> - As long as an application requires concurrent access to data, all contention can't be eliminated. There are techniques to *minimize* the performance penalties due to contention and they are are covered in Remediation chapter. Yet the most effective *solution* to a "contention problem" will always be a data model (schema) and transaction logic design that minimizes the opportunities for contention in the first place.
+> - As long as an application requires concurrent access to data, all contention can't be eliminated. There are techniques to *minimize* the performance penalties due to contention and they are covered in the Remediation chapter. Yet the most effective *solution* to a "contention problem" will always be a data model (schema) and transaction logic design that minimizes the opportunities for contention in the first place.
 
 
 
@@ -42,7 +42,7 @@ Related topic: For guidance about handling hardware contention for the underlyin
 
 All locking in CockroachDB is implemented in the KV layer. The locking granularity is a key. At the SQL layer, a logical row of a relational table can be represented by one or more KV pairs, according to the number of column families defined by a table DDL. Therefore at the SQL layer, the locking in CockroachDB is more granular than row-level. However, in this section, unless specifically noted, we assume the *row-level locking*, which corresponds to the default single column family per table.
 
-CockroachDB implements only one kind of lock - an *exclusive write lock* to manage a concurrent access by a key. Since there is only one kind of lock, we will be referring to it as just "lock".
+CockroachDB implements only one kind of lock - an *exclusive write lock* to manage concurrent access by a key. Since there is only one kind of lock, we will be referring to it as just "lock".
 
 **CockroachDB locking implementation highlights:**
 
@@ -51,7 +51,7 @@ CockroachDB implements only one kind of lock - an *exclusive write lock* to mana
 - Writes block reads and writes [from other transactions]
 - Reads do not acquire locks
 - Reads do not block reads or writes [from other transactions]
-- All blocked statements are waiting indefinitely in the same [queue](https://www.cockroachlabs.com/docs/v21.2/architecture/transaction-layer.html#txnwaitqueue) until the blocking transaction releases the lock (aside from situations when a waiting transaction is forcefully disrupted externally, for example by a timeout of as a result of a closed connection)
+- All blocked statements are waiting indefinitely in the same [wait queue](https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer.html#txnwaitqueue) until the blocking transaction releases the lock (aside from situations when a waiting transaction is forcefully disrupted externally, for example by a timeout of as a result of a closed connection)
 - Locks are released when the holding transaction is closed (committed or rolled back)
 
 
@@ -219,7 +219,7 @@ Legacy DBMS-s commonly use a lock-based concurrency implementation, whereby enfo
 
 In CockroachDB, every transaction starts and commits at a timestamp assigned by a CockroachDB node that a client is connected to, called a gateway node. When choosing this timestamp the gateway node does not rely on synchronization with any other CockroachDB node. The gateway node uses its current time to assign a timestamp to each tuple written by this transaction.
 
-CockroachDB uses multi-version concurrency control (MVCC) - it stores multiple value versions for each tuple, ordered by timestamp. A reader generally returns the latest tuple with a timestamp earlier than the reader's timestamp and can could ignore tuples with higher timestamps. This is when a potential clock skew needs to be considered.
+CockroachDB uses multi-version concurrency control (MVCC) - it stores multiple value versions for each tuple, ordered by timestamp. A reader generally returns the latest tuple with a timestamp earlier than the reader's timestamp and ignores tuples with higher timestamps. This is when a potential clock skew needs to be considered.
 
 If a reader's timestamp is assigned by a CockroachDB node with a clock that is behind, it might encounter tuples with higher timestamps that were, in fact, committed before the reader's transaction but their timestamps were assigned by a clock that is ahead.
 
@@ -247,12 +247,12 @@ For information about handling transactions that had been forced to restart, rev
 
 A CockroachDB operator should be aware that:
 
--  While conflict resolution normally results in just one party of a conflict yielding execution, it's possible that a conflict may result in more than one `40001` victim, even in a 2 transaction conflict.
+-  While conflict resolution normally results in just one party of a conflict yielding execution, it's possible that a conflict may result in more than one `40001` victims, even in a 2 transaction conflict.
 -  `40001` errors, that are normally associated with contention conflicts, can also occur outside of a contention situation
 
 #### Two transactions in a deadlock can cause each other to restart (both fail with a retry error)
 
-CockroachDB implementation is designed to not let two transactions both cancel each other, so the system would make progress on at least one of them. However a situation where both conflicting transactions fail with a retry error can't be completely rule it out. It would be difficult to make an example of that situation. It's a peculiarity of the code paths.
+CockroachDB implementation is designed to not let two transactions both cancel each other, so the system would make progress on at least one of them. However a situation where both conflicting transactions fail with a retry error can't be completely ruled out. It would be difficult to make an example of that situation. It's a peculiarity of the code paths.
 
 #### A transaction can get a retry error code spuriously
 
@@ -266,7 +266,7 @@ For example, a lease transfer clears the [timestamp cache](https://www.cockroach
 
 ## 5. Contention Aggravating Factors
 
-One of the main factors making a negative impact of contention on the workload more pronounced is a "loose" multi-statement transaction design, when an application is doing a measurable amount non-database work while in an open transaction. A "loose" transaction may be holding a lock longer than absolutely necessary, thus increasing the wait times of transactions that are blocked on that lock. Or increasing the time between executions of individual statements in a transaction, thus increasing a probability of isolation conflicts.
+One of the main factors making a negative impact of contention on the workload more pronounced is a "loose" multi-statement transaction design, when an application is doing a measurable amount non-database work while in an open transaction. A "loose" transaction may be holding a lock longer than absolutely necessary, thus increasing the wait times of transactions that are blocked on that lock. Or increasing the time between executions of individual statements in a transaction, thus increasing probability of isolation conflicts.
 
 For a high level ***visual assessment***, compare the [Open SQL Transactions](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#open-sql-transactions) and the [Active SQL Statements](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#active-sql-statements) graphs in the the [SQL Dashboard](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html) side by side. If the number of active statements track the number of open transactions, it means each open transaction is executing a statement, and that would suggest a good transaction logic implementation. Conversely, if the number of active statements lags the number of open transactions, it would suggest that some open transactions are doing non-database work while keeping a transaction open, which should probably be investigated.
 
@@ -276,12 +276,12 @@ For a high level ***visual assessment***, compare the [Open SQL Transactions](ht
 
 ## 6. Contention Troubleshooting Steps
 
-A contention investigation is practically always prompted by a performance complain, with or without `40001` error observations. The main concern is commonly a worsened response time, caused by the two attributes of contention - waits and/or retries - directly contributing to its increase.
+A contention investigation is practically always prompted by a performance complaint, with or without `40001` error observations. The main concern is commonly a worsened response time, caused by the two attributes of contention - waits and/or retries - directly contributing to its increase.
 
 Troubleshooting of performance issues caused by workload contention follows this path:
 
 - Step 1. Confirm that the root cause of the performance issues is predominantly the workload contention and not various other possible causes
-- Step 2. If contention is confirmed to be the principle issue, identify what specific type of conflicts (locking, isolation, or uncertainty) exist in the workload
+- Step 2. If contention is confirmed to be the principal issue, identify what specific type of conflicts (locking, isolation, or uncertainty) exist in the workload
 - Step 3. Using instrumentation available for each type of conflict, identify the contending transactions and the contention point (key). With that information available, a cluster operator, in collaboration with an application developer, can act and resolve the contention issues.
 
 
@@ -314,7 +314,7 @@ Assessing the degree of contention in a cluster is aligned with determining the 
 
 For a ***quick visual assessment***, observe the [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/stable/ui-transactions-page.html). Select the time interval in the header that corresponds to the period of performance issues due to potential contention events. Sort the transactions by "Contention" [time] in descending order (largest contention on top). If *contention time* (the time a transaction spent waiting) is comparable or larger than the *transaction time* (the time a transaction was actively running), the locking conflicts have a significant negative impact on these transactions. Observe the execution *count* of transactions with high contention time. If it is significant, the locking conflict have a significant negative overall impact on the workload.
 
-For a ***visual assessment how lock conflicts have been impacting the workload over time***, observe the [SQL Statement Contention](https://www.cockroachlabs.com/docs/v21.2/ui-sql-dashboard.html#sql-statement-contention) graph. It will allow to correlate workload performance issues with "concentration" of lock conflicts over time.
+For a ***visual assessment how lock conflicts have been impacting the workload over time***, observe the [SQL Statement Contention](https://www.cockroachlabs.com/docs/v21.2/ui-sql-dashboard.html#sql-statement-contention) graph. It will allow correlating workload performance issues with "concentration" of lock conflicts over time.
 
 For more **insights into lock conflicts**, open a session with the [CockroachDB interactive SQL utility](https://www.cockroachlabs.com/docs/stable/cockroach-sql.html) and type:
 
@@ -398,19 +398,19 @@ The values in the `key` column are formatted as `/<table id>/<index id>/<key val
 
 #### Identifying Transaction Isolation Conflicts
 
-For a ***visual assessment how transaction isolation conflicts have been impacting the workload over time***, observe the [Transactions Restarts](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#transaction-restarts) graph. The isolation conflict errors `40001` that result in a client side retries and the uncertainty interval conflicts that result in an automatic server side retries (see below) are combined into one graph. Hover a pointer over the graph area. The isolation conflict errors `40001`  and are reported as all lines *other than* "Read Within Uncertainty Interval". Aggregate all `40001` client retry errors to assess the impact of the transaction isolation conflicts on the the workload performance over time.
+For a ***visual assessment how transaction isolation conflicts have been impacting the workload over time***, observe the [Transactions Restarts](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#transaction-restarts) graph. The isolation conflict errors `40001` that result in a client side retries and the uncertainty interval conflicts that result in an automatic server side retries (see below) are combined into one graph. Hover a pointer over the graph area. The isolation conflict errors are `40001`  and are reported as all lines *other than* "Read Within Uncertainty Interval". Aggregate all `40001` client retry errors to assess the impact of the transaction isolation conflicts on the workload performance over time.
 
 No detailed insights into transaction isolation conflicts are available in system tables via SQL interface.
 
-To be able to troubleshoot `40001` errors expediently, application developers are encouraged to log a detailed information about contending transactions and the contention key(s) upon receiving error `40001`.
+To be able to troubleshoot `40001` errors expediently, application developers are encouraged to log detailed information about contending transactions and the contention key(s) upon receiving error `40001`.
 
 
 
 #### Identifying Uncertainty Interval Conflicts
 
-For a ***quick visual assessment***, observe the [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/stable/ui-transactions-page.html). Select the time interval in the header that corresponds to the period of performance issues due to potential contention events. Sort the transactions by "Retries" [count] in descending order (largest number of retires on top).  Observe the execution *count* of transactions with high retry count. If it is significant percentage of executed transactions is retired, the uncertainty conflict may have a measurable negative overall impact on the workload.
+For a ***quick visual assessment***, observe the [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/stable/ui-transactions-page.html). Select the time interval in the header that corresponds to the period of performance issues due to potential contention events. Sort the transactions by "Retries" [count] in descending order (largest number of retires on top).  Observe the execution *count* of transactions with high retry count. If a significant percentage of executed transactions is retired, the uncertainty conflict may have a measurable negative overall impact on the workload.
 
-For a ***visual assessment how uncertainty conflicts have been impacting the workload over time***, observe the [Transactions Restarts](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#transaction-restarts) graph. Hover a pointer over the graph area. The automatic transaction restarts are reported as "Read Within Uncertainty Interval" line. It allows to correlate workload performance issues with automatic uncertainty conflicts over time.
+For a ***visual assessment how uncertainty conflicts have been impacting the workload over time***, observe the [Transactions Restarts](https://www.cockroachlabs.com/docs/stable/ui-sql-dashboard.html#transaction-restarts) graph. Hover a pointer over the graph area. The automatic transaction restarts are reported as the "Read Within Uncertainty Interval" line. It allows correlating workload performance issues with automatic uncertainty conflicts over time.
 
 No detailed insights into uncertainty conflicts are available in system tables via SQL interface.
 
@@ -498,7 +498,7 @@ Remediation is required when locking conflicts are too numerous, resulting in a 
 >
 > - Only if an application can use data that is 5 seconds old or older
 > - Primarily benefits read-only transactions
-> - Historical queries operate below [closed timestamps](https://www.cockroachlabs.com/docs/v21.2/architecture/transaction-layer#closed-timestamps) and therfore have perfect concurrency characteristics - they never wait on anything and never block anything
+> - Historical queries operate below [closed timestamps](https://www.cockroachlabs.com/docs/v21.2/architecture/transaction-layer#closed-timestamps) and therefore have perfect concurrency characteristics - they never wait on anything and never block anything
 > - Best possible performance - served by the nearest replica
 
 
@@ -592,9 +592,9 @@ In rare circumstances, when an automatic server side retry is not possible and r
 
 > ✅ **Reduce a probability of uncertainty conflicts**
 >
-> - The cluster's uncertainty window is configurable. Operators can reduce a probability of uncertainty conflicts by reducing the cluster's [--max-offset](https://www.cockroachlabs.com/docs/v21.2/cockroach-start.html#flags)  setting.
+> - The cluster's uncertainty window is configurable. Operators can reduce the probability of uncertainty conflicts by reducing the cluster's [--max-offset](https://www.cockroachlabs.com/docs/v21.2/cockroach-start.html#flags)  setting.
 > - The `max-offset` setting can be safely reduced from the current default 500ms to 250ms or below, if the clock synchronization relies on robust networking and NTP sources & configuration.
-> - Reducing the `max-offset` does not guarantee a measurable improvement. With a smaller uncertainty window, a probability of uncertainty conflicts is lower. If uncertainty retries are observed with a 500 ms  `max-offset`, it's reasonable to expect fewer retries with a 250 ms  `max-offset`.
+> - Reducing the `max-offset` does not guarantee a measurable improvement. With a smaller uncertainty window, the probability of uncertainty conflicts is lower. If uncertainty retries are observed with a 500 ms  `max-offset`, it's reasonable to expect fewer retries with a 250 ms  `max-offset`.
 
 
 
