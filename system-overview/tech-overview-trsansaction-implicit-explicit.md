@@ -1,8 +1,3 @@
-
- **< UNDER CONSTRUCTION >**
-
-
-
 # Technical Overview: Implicit vs. Explicit Transactions
 
 
