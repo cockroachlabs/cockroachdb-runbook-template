@@ -80,6 +80,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
     * [Node Shutdown (Stop)](routine-maintenance/node-shutdown.md)
     * [Add a Node](routine-maintenance/node-add.md)
     * [Node Decommissioning](routine-maintenance/node-decommission.md)
+    * [Cluster Region Migration](routine-maintenance/cluster-region-migrate.md)
     * [Cluster Startup / Shutdown](routine-maintenance/cluster-startup-shutdown.md)
     * [Cluster Resizing](routine-maintenance/cluster-resizing.md)
     * [Server / VM Replacement](routine-maintenance/server-vm-replacement.md)
