@@ -50,7 +50,7 @@ Upon receiving this the alert, an operator can take any of the following actions
   In v21.2 the default for this setting is [4 MB](https://github.com/cockroachdb/cockroach/issues/54029).
   Increasing this setting beyond the 21.2 default may be warranted in specific circumstances, however an operator should keep in perspective that this setting is per-transaction and therefore, if set to a high value, may lead to an out-of-memory (OOM) event in high concurrency environments.
 - After reviewing the workload, an operator may conclude that a possible performance impact (discussed above) of allowing transactions to take a large number of intents is not a concern. For example, a large delete of obsolete, not-in-use data may create no concurrency implications and the elapsed time to execute that transaction may not be material. In that case, "doing-nothing" could be a valid response to this alert.
-- An operator may enable a "circuit breaker" that would prevent any transaction to exceed the locks-tracking memory budget. A cluster setting `kv.transaction.reject_over_max_intents_budget.enabled` allows an operator to control the behavior of CockroachDB when a transaction exceeds the memory budget for the point intents list.
+- An operator may enable a "circuit breaker" that would prevent any transaction exceeding the locks-tracking memory budget. A cluster setting `kv.transaction.reject_over_max_intents_budget.enabled` allows an operator to control the behavior of CockroachDB when a transaction exceeds the memory budget for the point intents list.
   If `kv.transaction.reject_over_max_intents_budget.enabled`  is true, a SQL transaction that exceeds the intent list memory budget would be rejected with an error 53400 ("configuration limit exceeded"). 
 
 
