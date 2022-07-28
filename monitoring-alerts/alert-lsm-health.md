@@ -27,8 +27,8 @@ rocksdb.read-amplification
 
 | Tier     | Definition                                    |
 | -------- | --------------------------------------------- |
-| CRITICAL | Read Amplification exceeds 150 for 10 minutes |
 | WARNING  | Read Amplification exceeds 50 for 1 hour      |
+| CRITICAL | Read Amplification exceeds 150 for 10 minutes |
 
 
 
