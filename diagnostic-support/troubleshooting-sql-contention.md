@@ -21,8 +21,6 @@ To resolve any transaction contention, a database takes one of the two available
 
 Sections below detail how CockroachDB handles the most common concurrency conflicts with either of the methods above.
 
-Contention scenario illustrations in this section include both [implicit and explicit transactions](../system-overview/tech-overview-trsansaction-implicit-explicit.md). If a sequence of SQL statements starts with a `BEGIN`, it denotes an explicit transaction. Otherwise a transaction is implicit, single-statement.
-
 
 
 
@@ -40,7 +38,11 @@ Related topic: For guidance about handling hardware contention for the underlyin
 
 ## 1. Locking Conflicts Explained
 
-All locking in CockroachDB is implemented in the KV layer. The locking granularity is a key. At the SQL layer, a logical row of a relational table can be represented by one or more KV pairs, according to the number of column families defined by a table DDL. Therefore at the SQL layer, the locking in CockroachDB is more granular than row-level. However, in this section, unless specifically noted, we assume the *row-level locking*, which corresponds to the default single column family per table.
+All locking in CockroachDB is implemented in the KV layer and the *locking granularity is a key*.
+
+At the SQL layer, a logical row of a relation can be represented by one or more KV pairs, according to the number of column families  and secondary indexes defined by a table DDL. Therefore at the SQL layer, the locking in CockroachDB is more granular than row-level - column families and secondary indexes can have separate locking scopes from the primary keys.
+
+To provide concise actionable guidance, in this section we imply *row-level locking* unless specifically noted otherwise.
 
 CockroachDB implements only one kind of lock - an *exclusive write lock* to manage concurrent access by a key. Since there is only one kind of lock, we will be referring to it as just "lock".
 
@@ -69,6 +71,8 @@ When transactions in a deadlock have the same priority, which transaction is abo
 #### Locking Contention Illustrations
 
 The common types of contention scenarios are illustrated with easy-to-follow SQL examples. They may provide CockroachDB cluster operators with an additional method of learning the insights of contention handling, with SQL "scratch pad" experiments.
+
+Contention scenario illustrations in this section include both [implicit and explicit transactions](../system-overview/tech-overview-trsansaction-implicit-explicit.md). If a sequence of SQL statements starts with a `BEGIN`, it denotes an explicit transaction. Otherwise a transaction is implicit, single-statement.
 
 ##### Setup for All Contention Illustrations
 
@@ -149,7 +153,9 @@ Isolation is a property implemented by a database that defines how the changes m
 
 CockroachDB only supports `SERIALIZABLE` isolation.
 
-The leveling language of the SQL specification defines `SERIALIZABLE` as the highest, i.e. the strongest isolation level. It guarantees that the following phenomena *will NOT* occur in a transaction:
+The SQL specification defines `SERIALIZABLE` as the highest, i.e. the strongest isolation level that guarantees that the effect of SQL transactions that overlap in time is the same as had they not overlapped in time.
+
+ `SERIALIZABLE` isolation guarantees that the following phenomena *will NOT* occur in a transaction:
 
 1. Non-repeatable reads
 2. Phantom reads
@@ -159,9 +165,9 @@ Legacy DBMS-s commonly use a lock-based concurrency implementation, whereby enfo
 **CockroachDB serializable isolation implementation highlights:**
 
 - CockroachDB is using a non-lock based optimistic concurrency control, acquiring no read locks.
-- Writes proceed if there is no lock conflict, regardless of the reader's state in any transaction.
+- Writes proceed if there is no lock conflict.
 - To ensure serializability, CockroachDB *validates that the previous reads haven't changed at the commit time*. If reads are non-repeatable, the transaction in conflict is forced to restart.
-- A transaction that was forced to restart, will return error `40001` to the client to be retried.
+- When a transaction is forced to restart, CockroachDB will make the best effort to automatically retry it on the server side, provided the conflict can be discovered in the first statement of a transaction. If autoretry is not possible, a transaction returns a `40001` error for a client side retry.
 
 
 
@@ -217,7 +223,11 @@ Legacy DBMS-s commonly use a lock-based concurrency implementation, whereby enfo
 
 ## 3. Uncertainty Conflicts due to Possible Clock Skew Explained
 
-In CockroachDB, every transaction starts and commits at a timestamp assigned by a CockroachDB node that a client is connected to, called a gateway node. When choosing this timestamp the gateway node does not rely on synchronization with any other CockroachDB node. The gateway node uses its current time to assign a timestamp to each tuple written by this transaction.
+In CockroachDB, every transaction starts and commits at a timestamp assigned by a CockroachDB node that a client is connected to, called a gateway node. When choosing this timestamp the gateway node does not rely on communication with any other CockroachDB node. The gateway node uses its current time to assign a timestamp to each tuple written by this transaction.
+
+
+
+
 
 CockroachDB uses multi-version concurrency control (MVCC) - it stores multiple value versions for each tuple, ordered by timestamp. A reader generally returns the latest tuple with a timestamp earlier than the reader's timestamp and ignores tuples with higher timestamps. This is when a potential clock skew needs to be considered.
 
@@ -225,19 +235,23 @@ If a reader's timestamp is assigned by a CockroachDB node with a clock that is b
 
 Tuples with timestamps above the reader’s, but within the `max-offset`, are considered to be ambiguous as to whether they're in the past or the future of the reader. If such an uncertain tuple is encountered, the *reader transaction will generally be forced to restart* at a higher timestamp so all previously uncertain changes are definitely in the past.
 
+
+
+
+
 For information about handling transactions that had been forced to restart, review the [transaction retries](../system-overview/tech-overview-trsansaction-retires.md) section.
 
 
 
 ##### Contention Illustration 3.1.  Uncertainty Conflicts
 
-| Transaction 1 (read, implicit)                               | Transaction 2 (write, implicit)               |
-| ------------------------------------------------------------ | --------------------------------------------- |
-| -- execute in a loop, concurrently with Txn 2                | -- execute in a loop, concurrently with Txn 1 |
-| SELECT * FROM t WHERE k=1;                                   | UPDATE t v=111 WHERE k=1;                     |
-| *`Implict reads will practically always succeed`*            | *`Writes will always succeed`*                |
-| *`Occasionally reads will take longer due to automatic retries`* |                                               |
-| *`Shown in the Retry column in DB Console Transactions page`* |                                               |
+| Transaction 1 (read, implicit)                               | Transaction 2 (write, implicit)                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| -- execute in a loop, concurrently with Txn 2                | -- execute in a loop, concurrently with Txn 1                |
+| SELECT * FROM t WHERE k=1;                                   | UPDATE t v=111 WHERE k=1;                                    |
+| *`Implicit reads will succeed nearly 100% of the time due to automatic retries`* | *`Implicit writes will succeed nearly 100% of the time`*     |
+| *`(except an edge case when the returned result set is very large)`* | *` (except an edge case when an internal read that preceeds an UPDATE sees an uncertainty-related restart)`* |
+| *`Automatic retries shown in the Retry column in DB Console' Transactions page`* |                                                              |
 
 
 
@@ -312,7 +326,7 @@ Assessing the degree of contention in a cluster is aligned with determining the 
 
 #### Identifying Locking Conflicts
 
-For a ***quick visual assessment***, observe the [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/stable/ui-transactions-page.html). Select the time interval in the header that corresponds to the period of performance issues due to potential contention events. Sort the transactions by "Contention" [time] in descending order (largest contention on top). If *contention time* (the time a transaction spent waiting) is comparable or larger than the *transaction time* (the time a transaction was actively running), the locking conflicts have a significant negative impact on these transactions. Observe the execution *count* of transactions with high contention time. If it is significant, the locking conflict have a significant negative overall impact on the workload.
+For a ***quick visual assessment***, observe the [Transactions Page in DB Console](https://www.cockroachlabs.com/docs/stable/ui-transactions-page.html). Select the time interval in the header that corresponds to the period of performance issues due to potential contention events. Sort the transactions by "Contention" [time] in descending order (largest contention on top). If *contention time* (the time a transaction spent waiting) is comparable or larger than the *transaction time* (the time a transaction was actively running), the locking conflicts have a significant negative impact on these transactions. Observe the execution *count* of transactions with high contention time. If it is significant, the locking conflicts have a significant negative overall impact on the workload.
 
 For a ***visual assessment how lock conflicts have been impacting the workload over time***, observe the [SQL Statement Contention](https://www.cockroachlabs.com/docs/v21.2/ui-sql-dashboard.html#sql-statement-contention) graph. It will allow correlating workload performance issues with "concentration" of lock conflicts over time.
 
@@ -425,8 +439,9 @@ Actionable details include:
 - the definitions of 2 contending transactions at the level of statement fingerprint (normalized), and
 - the contention point (key)
 
-The detailed instrumentation of contention conflicts is a new feature in v22.1 and is available for locking conflicts only. A history of contention events is captured in the `crdb_internal.transaction_contention_events`  system table that contains transaction fingerprint IDs for both blocking and
-waiting transactions, and the contention key.  [TODO: (1) discover a way to decode the txn fingerprint IDs and report transactions' statements and (2) joining with `crdb_internal.transaction_statistics` vs `crdb_internal.cluster_transaction_statistics`.]
+The detailed instrumentation of contention conflicts is a new feature in v22.1 and is available for locking conflicts only. A history of contention events is captured in the `crdb_internal.transaction_contention_events`  system table that contains transaction fingerprint IDs for both blocking and waiting transactions, and the contention key. 
+
+[TODO: (1) discover a way to decode the txn fingerprint IDs and report transactions' statements and (2) join with `crdb_internal.transaction_statistics` vs `crdb_internal.cluster_transaction_statistics`.]
 
 For example, to identify lock conflicts details in the last 30 minutes, run the following query:
 
@@ -521,7 +536,9 @@ Remediation is required when locking conflicts are too numerous, resulting in a 
 
 ### Remediation of Transaction Isolation Conflicts
 
-Transaction Isolation Conflicts may have the largest negative impact on workload performance among all types of contention because they result in a `40001` client side retry, whereby the work  done by the preceding transaction is effectively thrown away. [TODO: there are nuances wrt the previous sentence; a retry logic [can be optimized](https://www.cockroachlabs.com/docs/v21.2/savepoint.html#savepoints-for-client-side-transaction-retries) to not throw away the entire transaction work. Unclear if this is worth emphasizing.]
+Transaction Isolation Conflicts may have the largest negative impact on workload performance among all types of contention because they result in a `40001` client side retry, whereby the work  done by the preceding transaction is effectively thrown away. 
+
+[TODO: there are nuances wrt the previous sentence; a retry logic [can be optimized](https://www.cockroachlabs.com/docs/v21.2/savepoint.html#savepoints-for-client-side-transaction-retries) to not throw away the entire transaction work. Unclear if this is worth emphasizing.]
 
 Several remediation techniques are available to minimize the impact of isolation conflicts, listed below in the order of a perceived positive impact, most impactful first.
 
@@ -605,9 +622,27 @@ In rare circumstances, when an automatic server side retry is not possible and r
 > - Eliminate unnecessary additional client<->gateway network round trips
 > - Bring additional performance benefits
 >   - Hold locks for less time
->   - Allow single-range txns to use a streamlined 1-phase commit fast-path
+>   - Allow some single-range txns to use a streamlined 1-phase commit fast-path (specifically - UPSERTs, which only touch a single row and specify values for all columns.)
 
 
+
+## FAQs
+
+**Q:** *CRDB workload contention vernacular distinguishes the 3 types of conflicts - locking, isolation, and uncertainty. Aren't isolation conflicts the same as locking conflicts? Why is it helpful to consider these 2 conflict types separately?*
+
+**A:**  Locking and isolation conflicts differ in the following essential ways:
+
+- Locking conflicts (outside of a deadlock condition) are resolved through waits. Isolation conflicts are resolved by forcing one of the transactions to restart.
+- Locking conflicts are handled within the conflicting statements. Isolation conflicts can be resolved at commit time, after a conflicting statement was successfully executed.
+- In the real world, the locking conflicts are predominantly an attribute of business requirements calling for concurrent data changes, unavoidable. Isolation conflicts can often be eliminated with serializable-isolation-aware transaction implementation.
+- The main remediation choices for locking and isolation conflicts are different. It’s helpful to differentiate for clarity of remediation guidance.
+
+
+
+**Q:** *CRDB workload contention vernacular distinguishes the 3 types of conflicts - locking, isolation, and uncertainty. Uncertainty conflicts are intuitively different from other conflict types. Is it even a "conflict"?  In theory, uncertainty interval related restarts can occur even if a user only ever runs one transaction at a time.*
+
+**A:**  Referring to uncertainty related restarts as "conflicts" is a useful since they only arise when there are near-concurrent reads and writes on the same keys. A "conflict" is an attribute of incompatibility. It's broader than just a locking conflict, for example. Since a reader would not be forced to restart if there were no writes, these reads and writes are not compatible under the circumstances, and therefore are conflicted. This conflict is a direct consequence of a contention on a key (which we agree is a "conflict"), but since not directly related to locking, it's useful to view then as a different type of "conflict".
+Also note that the consequence of this type of incompatibility is essentially the same as in a case of an isolation conflict. A transaction in this type of conflict is forced to restart and may even return the same error. If isolation related incompatibility is a "conflict" that results in a 40001 error, it would be confusing to users if the uncertainty related incompatibility is not referred to as a "conflict".
 
 
 
