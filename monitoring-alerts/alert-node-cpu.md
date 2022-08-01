@@ -1,6 +1,6 @@
 # Alert: Node CPU High Utilization
 
-### Purpose of these Alerts
+### Purpose of this Alert
 
 I node with a high CPU utilization (a.k.a. an "overloaded" node) has a limited ability to process the user workload and increases the risks of cluster instability.
 
@@ -20,8 +20,8 @@ sys.cpu.user.percent, sys.cpu.sys.percent
 
 | Tier     | Definition                                      |
 | -------- | ----------------------------------------------- |
-| CRITICAL | Node CPU Utilization exceeds 85% for 30 minutes |
 | WARNING  | Node CPU Utilization exceeds 80% for 1 hour     |
+| CRITICAL | Node CPU Utilization exceeds 85% for 30 minutes |
 
 
 

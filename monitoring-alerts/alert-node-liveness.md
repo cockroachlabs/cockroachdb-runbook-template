@@ -14,8 +14,8 @@ Inconsistent Liveness check
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
-| CRITICAL | max cluster (liveness.livenodes) - min (liveness.livenodes) > 0 for 5 minutes |
 | WARNING  | max cluster (liveness.livenodes) - min (liveness.livenodes) > 0 for 2 minutes |
+| CRITICAL | max cluster (liveness.livenodes) - min (liveness.livenodes) > 0 for 5 minutes |
 
 
 

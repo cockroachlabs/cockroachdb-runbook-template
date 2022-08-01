@@ -2,7 +2,9 @@
 
 ### Purpose of this Alert
 
-<Why this rule, what it prevents>
+Unbalanced utilization of CockroachDB nodes in a cluster may negatively affect the cluster's performance and stability, with some nodes getting overloaded while others remain relatively underutilized. Potential causes of node hotspots are outlined in the "Hotspots" Section of [the common problems experienced by CockroachDB users](../most-common-problems/README.md).
+
+
 
 Health rule violation event. Node is low on memory.
 

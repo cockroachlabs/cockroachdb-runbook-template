@@ -20,8 +20,8 @@ sys.cpu.user.percent, sys.cpu.sys.percent
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
-| CRITICAL | A node has a significantly higher CPU usage - 70% or higher above the cluster's median - for 1 hour<br/>and<br/>the node's CPU utilization is over 85% |
 | WARNING  | A node has a significantly higher CPU usage  - 70% or higher above the cluster's median -  for 2 hours<br/>and<br/>the node's CPU utilization is over 70% |
+| CRITICAL | A node has a significantly higher CPU usage - 70% or higher above the cluster's median - for 1 hour<br/>and<br/>the node's CPU utilization is over 85% |
 
 
 
