@@ -20,8 +20,8 @@ sys.cpu.user.percent, sys.cpu.sys.percent
 
 | Tier     | Definition                                      |
 | -------- | ----------------------------------------------- |
-| WARNING  | Node CPU Utilization exceeds 80% for 1 hour     |
-| CRITICAL | Node CPU Utilization exceeds 85% for 30 minutes |
+| WARNING  | Node CPU Utilization exceeds 85% for 2 hours    |
+| CRITICAL | Node CPU Utilization exceeds 90% for 60 minutes |
 
 
 
