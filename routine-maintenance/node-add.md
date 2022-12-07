@@ -4,7 +4,7 @@
 
 This procedure is used as a step of larger regular maintenance procedures or as an emergency procedure to resolve an operational issue.
 
-Examples of regular on-line maintenance procedures relying on adding nodes decommission are CockroachDB *cluster expansion/capacity increase, [*cluster topology change*](./cluster-region-migrate.md), rolling repaving of cluster VMs for security reasons, replacement or *hardware change* in the CockroachDB node's underlying VM or bare metal server.
+Examples of regular on-line maintenance procedures relying on adding nodes are CockroachDB *cluster expansion/capacity increase, [*cluster topology change*](./cluster-region-migrate.md), rolling repaving of cluster VMs for security reasons, replacement or *hardware change* in the CockroachDB node's underlying VM or bare metal server.
 
 This procedure may be used for emergency repairs, for example to swap a cluster node that suffered an underlying *hardware failure*. 
 
