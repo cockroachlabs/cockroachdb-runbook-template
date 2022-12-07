@@ -33,7 +33,7 @@ A node decommission includes data transfers (raft snapshots) in the amount of da
 ### Node Decommission Implementation Highlights
 
 - To maintain the designed replication factor (RF) at all times during node decommission, a new replica for each range on a decommissioning node is added to some other node in the cluster via a raft snapshot. 
-- Each node (store) can sends only 1 snapshot at a time.
+- Each node (store) sends only 1 snapshot at a time.
 - Range replica snapshots are sent by nodes that are range's leaseholders.
 - The decommissioning node will have a longer queue of snapshot work than other nodes. This is because each non-decommissioning node in the cluster will have to send snapshots for the subset of its leaseholders that have a replica on the decommissioning node, but the decommissioning node will always have to send snapshots for *all* of its leaseholders.
 
@@ -75,7 +75,7 @@ However, a manually node drain could be a helpful remediation tool if a decommis
 
    `cockroach node decommission <space separated list of node ids> --host=…`
 
-   to decommission all nodes at once is expected to work best. Alternatively decommission 1 node at a time, but ensure that only one `cockroach node decommission` command runs at a time.
+   decommissioning all nodes at once is expected to work best. Alternatively decommission 1 node at a time, but ensure that only one `cockroach node decommission` command runs at a time.
 
    
 
@@ -98,10 +98,9 @@ However, a manually node drain could be a helpful remediation tool if a decommis
 
    
 
-8. The decommission command *leaves the CRDB process alive* on decommissioned nodes at the end. Shut down the Cockroach DB process on decommissioned hosts by sending a shutdown signal (e.g. SIGTERM) to the CRDB process or use Linux service manager if the CRDB process is running as a service. This has to be done locally on all Old Region’s nodes. Disable the CockroachDB service, if used, to prevent it from inadvertently re-starting.
+8. The decommission command *leaves the CRDB process alive* on decommissioned nodes at the end. Shut down the CockroachDB process on decommissioned hosts by sending a shutdown signal (e.g. SIGTERM) to the CRDB process or use Linux service manager if the CRDB process is running as a service. This has to be done locally on all Old Region’s nodes. Disable the CockroachDB service, if used, to prevent it from inadvertently re-starting.
 
    
 
 9. After a decommission completes, the compaction queue normally grows as a side effect. The remaining/active cluster nodes receive new range replicas which have to be compacted with existing ranges. By design, the compaction process is single-threaded and relatively slow. Users should expect no material impact on SQL workload while the queue is drained over multiple hours.
-
 
