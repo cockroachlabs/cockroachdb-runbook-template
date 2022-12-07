@@ -49,7 +49,7 @@ Node(s) decommission, by definition, results in an increased demand for processi
 
 ### Should Nodes be Manually Drained before Decommission?  
 
-TLDR; There is no need to complicate the procedure with a manual node drain before decommissioning it, as long as the decommissioning [procedure is robustly implemented](#Procedure Steps) and coordinated with configuration parameters of other components, particularly load balancers and connection pools.
+TLDR; There is no need to complicate the procedure with a manual node drain before decommissioning it, as long as the decommissioning [procedure is robustly implemented](./node-remove.md#procedure-steps) and coordinated with configuration parameters of other components, particularly load balancers and connection pools.
 
 However, a manually node drain could be a helpful remediation tool if a decommissioning node is malfunctioning or taking an excessively long time to shed its ranges. A manual drain should be fast and the leaseholders distributed evenly across the remaining nodes of the cluster after the drain should be able to send snapshots faster than a long queue of snapshots from one decommissioning node.
 
