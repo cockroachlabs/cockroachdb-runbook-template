@@ -1,4 +1,4 @@
-# Procedure:  Set Snapshot Rebalancing Rate
+# Procedure:  Set Snapshot Rebalance & Recovery Rates
 
 ### About this Procedure
 

@@ -12,7 +12,7 @@ The steps in this procedure can be edited to implement similar/related procedure
 
 ### Procedure Steps
 
-1. [Set the rebalancing rate](./change-rebalancing-rate.md) to 256MB or better. This will allow the cluster to complete transient data transfers and reach the steady state faster.
+1. [Set the *rebalance and recovery rates*](./change-rebalance-rate.md) to 256MB or better. This will allow the cluster to complete transient data transfers and reach the steady state faster.
 
    
 

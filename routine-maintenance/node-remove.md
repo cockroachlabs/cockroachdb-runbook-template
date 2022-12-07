@@ -61,7 +61,7 @@ However, a manually node drain could be a helpful remediation tool if a decommis
 
 ### Procedure Steps
 
-1. [Set the *rebalancing rate*](./change-rebalancing-rate.md) to 256MB or better. This will allow the cluster to complete transient data transfers and reach the steady state faster.
+1. [Set the *rebalance and recovery rates*](./change-rebalance-rate.md) to 256MB or better. This will allow the cluster to complete transient data transfers and reach the steady state faster.
 
    
 
