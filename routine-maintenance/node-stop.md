@@ -1,7 +1,7 @@
 
-# Procedure: Node Shutdown (Stop)
+# Procedure:  Node Shutdown (Stop)
 
-### Purpose of this Procedure
+### About this Procedure
 
 This procedure is an integral part of all regular maintenance procedures that requires a CockroachDB node process restart. For example, a rolling software upgrade.
 

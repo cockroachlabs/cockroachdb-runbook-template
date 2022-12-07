@@ -1,9 +1,11 @@
 
-# Procedure: Node Start
+# Procedure:  Node Start
 
-### Pre-Requisites
+### About this Procedure
 
-<Check cluster health?>
+ **< UNDER CONSTRUCTION >**
+
+
 
 ### Node start
 

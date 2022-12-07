@@ -1,13 +1,12 @@
-# Procedure: Changefeed Management
+# Procedure:  Changefeed Management
+### About this Procedure
 Change data capture (CDC) provides efficient, distributed, row-level changefeeds into a configurable sink for downstream processing such as reporting, caching, or full-text indexing.
 
-## Purpose
 This document's purpose is to outline changefeed management tasks during routine changes to the cluster and database. Changefeed sinks and options are well documented [cockroachlabs.com](https://www.cockroachlabs.com/docs/stable/change-data-capture-overview.html) and will not be covered here.
 
-## CockroachDB version used for this documentation
-`v21.2.5`
 
-## Changefeed during cluster maintenance 
+
+### Changefeed During Cluster Maintenance 
 Changefeeds work as jobs in CockroachDB. Jobs in CockroachDB is assigned to a single node in the cluster called the coordinator node. When the coordinator node is impacted by an upgrade or resizing activities, another node will take over the task. Keeping changefeeds running during cluster maintenance will incur additional overhead and risk so it is advisable to pause and resume all changefeeds using the following:
 
 ```sql

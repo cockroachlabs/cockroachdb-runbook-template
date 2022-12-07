@@ -1,29 +1,26 @@
 
-# Procedure: Cluster Region Migration
+# Procedure:  Cluster Region Migration
 
-### Purpose of this Procedure
+### About this Procedure
 
 This procedure is invoked when all or some nodes in one of the CockroachDB cluster's regions are relocated to another region. For example, moving all nodes from `US East` to `Europe (Ireland)`. The procedure is online, no service interruption, and it's designed to minimize the performance impact on the workload.
 
 The steps in this procedure can be edited to implement similar/related procedures, such as adding a new region to a CockroachDB cluster.
 
 
+
+
 ### Procedure Steps
 
-1. Increase the rebalancing rate to 256MB or better by setting two configuration options to the *same value*:
-
-   ```
-    set cluster setting kv.snapshot_rebalance.max_rate = '256 MB';
-    set cluster setting kv.snapshot_recovery.max_rate = '256 MB';
-   ```
+1. [Set the rebalancing rate](./change-rebalancing-rate.md) to 256MB or better. This will allow the cluster to complete transient data transfers and reach the steady state faster.
 
    
 
-2. Add all New Region’s nodes to the connection load balancing configuration.
+2. [Add all New Region’s nodes](./node-add.md) to the connection load balancing configuration.
 
    
 
-3. Add all planned nodes in the New Region. Ensure the `--locality` reflects the new topology.
+3. Add all planned nodes in the New Region at once. Ensure the `--locality` reflects the new topology.
 
    
 
@@ -35,43 +32,14 @@ The steps in this procedure can be edited to implement similar/related procedure
 
    
 
-6. Start decommissioning Old Region’s nodes. A single command
-
-   `cockroach node decommission <space separated list of node ids> --host=…`
-
-   to decommissioning all Old Region nodes is expected to work best. Alternatively decommission 1 node at a time, however, ensure that only one `cockroach node decommission` command runs at a time. A decommission command can be run from any cluster node.
+6. [Decommission all Old Region’s nodes](./node-remove.md) at once, in one command.
 
    
-
-7. Observe the status:
-
-   ```
-    id | is_live | replicas | is_decommissioning | is_draining 
-   +---+---------+----------+--------------------+-------------+
-     4 | false   |        0 |       true         |    true   
-   (1 row)
-   ```
-
-   
-
-8. `cockroach node status <id> --all`
-
-   
-
-9. Confirm that “replicas per store” and “leaseholders per store” of the decommissioned nodes are 0 in the metrics page.
-
-   
-
-10. The decommission command *leaves the CRDB process alive* on decommissioned nodes at the end. Shut down the Cockroach DB process on decommissioned hosts by sending a shutdown signal (e.g. SIGTERM) to the CRDB process or use Linux service manager if the CRDB process is running as a service. This has to be done locally on all Old Region’s nodes. Disable the CockroachDB service, if used, to prevent it from inadvertently re-starting.
-
-    
-
-11. After a decommission completes, the compaction queue normally grows as a side effect. The remaining/active cluster nodes receive new range replicas which have to be compacted with existing ranges. By design, the compaction process is single-threaded and relatively slow. Users should expect no material impact on SQL workload while the queue is drained over multiple hours.
 
 
 ### Migration of a Region in a Multi-Region Cluster
 
-Addional considerations apply when migrating a Region in a cluster that is using [multi-region capabilities](https://www.cockroachlabs.com/docs/v21.2/multiregion-overview.html). The data in a multi-region cluster is partitioned on a [specially maintained column](https://www.cockroachlabs.com/docs/v21.2/set-locality#crdb_region) that stores the row's home region name.
+Additional considerations apply when migrating a Region in a cluster that is using [multi-region capabilities](https://www.cockroachlabs.com/docs/v21.2/multiregion-overview.html). The data in a multi-region cluster is partitioned on a [specially maintained column](https://www.cockroachlabs.com/docs/v21.2/set-locality#crdb_region) that stores the row's home region name.
 
 A region can be migrated with or without region name change. If the region name can be preserved, a migration procedure would be simpler and measurably faster. However it could be confusing to database users if the region name refers to region's location and that location is changing. 
 

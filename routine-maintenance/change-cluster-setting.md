@@ -1,4 +1,4 @@
-# Procedure: Change Cluster Setting
+# Procedure:  Change Cluster Setting
 
 ### About this Procedure
 
