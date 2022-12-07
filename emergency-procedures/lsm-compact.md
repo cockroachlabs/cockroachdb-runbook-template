@@ -12,7 +12,7 @@
 
 On the problem node:
 
-1. [Stop the node](../routine-maintenance/node-shutdown.md)
+1. [Stop the node](../routine-maintenance/node-stop.md)
 
 2. Run a manual offline compaction for a problem node suffering from read amplification by issuing the following command:
 
