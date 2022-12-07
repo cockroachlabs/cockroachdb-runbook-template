@@ -75,7 +75,7 @@ However, a manually node drain could be a helpful remediation tool if a decommis
 
    `cockroach node decommission <space separated list of node ids> --host=…`
 
-   to decommissioning all nodes at once is expected to work best. Alternatively decommission 1 node at a time, but ensure that only one `cockroach node decommission` command runs at a time.
+   to decommission all nodes at once is expected to work best. Alternatively decommission 1 node at a time, but ensure that only one `cockroach node decommission` command runs at a time.
 
    
 
