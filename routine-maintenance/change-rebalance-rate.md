@@ -19,7 +19,7 @@ The value of this rate really depends on a few things - increasing it may cause 
 
 ### Procedure Steps
 
-Increase the rebalancing rate to 256MB or better by setting two configuration options to the *same value*:
+Increase the rebalance and recovery rates to 256MB by setting two configuration options to the *same value*:
 
 ```
  set cluster setting kv.snapshot_rebalance.max_rate = '256 MB';
