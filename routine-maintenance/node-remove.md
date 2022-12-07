@@ -1,14 +1,14 @@
-# Procedure:  Node(s) Removal (Decommission)
+# Procedure:  Remove (Decommission) Node(s)
 
 ### About this Procedure
 
-Removal of nodes from a CockroachDB cluster is referred to as nodes' [decommission](https://www.cockroachlabs.com/docs/stable/node-shutdown?filters=decommission#decommission-the-node).
+Removal of nodes from a CockroachDB cluster is referred to as nodes' [decommissioning](https://www.cockroachlabs.com/docs/stable/node-shutdown?filters=decommission#decommission-the-node).
 
-This procedure may be used as a step of larger regular maintenance procedures or as an emergency procedure to resolve an operational issue.
+This procedure is used as a step of larger regular maintenance procedures or as an emergency procedure to resolve an operational issue.
 
 Examples of regular on-line maintenance procedures relying on node decommission are CockroachDB *cluster contraction*/capacity reduction, [*cluster topology change*](./cluster-region-migrate.md), rolling repaving of cluster VMs for security reasons, replacement or *hardware change* in the CockroachDB node's underlying VM or bare metal server.
 
-This procedure may be used for emergency repairs, for example to remove of a running node from the cluster when the underlying *hardware failures* or platform *configuration errors* are observed. 
+This procedure may be used for emergency repairs, for example to remove of a running node from the cluster when an underlying *hardware failure* or platform *configuration errors* are observed. 
 
 > ✅ The node decommission command can be run *from any cluster node* and target any cluster node(s), self or other, *in any state* - running, stopped, or even no longer existing.
 
@@ -21,7 +21,7 @@ This procedure may be used for emergency repairs, for example to remove of a run
 
 Superficially, Decommission and [Drain](./node-stop.md) may appear to be functionally similar actions, yet they are materially different and implementation-wise have separate code paths, *not* sharing configuration/tuning "knobs". 
 
-During the decommission, a node transfers the replicas of all its ranges to other nodes, drains all leases (it's really a no-op since at that time there should be no replicas on that node), and closes all SQL client connections to the node. Node decommission implies that the node is not going to return to the cluster.
+During the decommission, a node transfers the replicas of all its ranges to other nodes, drains all leases (it's a no-op since at that time there should be no replicas on that node), and closes all SQL client connections to the node. Node decommission implies that the node is not going to return to the cluster.
 Drain transfers the range leaseholders (and raft groups' leaderships) away from the drained node and closes all SQL connections to the node. Node drain implies the node is expected to rejoin the cluster in a near term.
 
 Decommission is a safe operation from the standpoint of maintaining the cluster's fault tolerance level. A decommissioning action does not allow under-replicated ranges at any point. On the other hand, a node drain (which is a precursor to a node shutdown), if followed by a node process stop, leaves the some ranges under-replicated.
@@ -43,11 +43,11 @@ A node decommission includes data transfers (raft snapshots) in the amount of da
 
 Node(s) decommission, by definition, results in an increased demand for processing and storage capacity on all nodes remaining in the cluster. The operator needs to ensure that the remaining nodes have sufficient compute and storage resources to process more workload and accommodate more data replicas.
 
-> ✅ When designing various maintenance procedures that leverage node add/node remove sequence for on-line node swap, be sure to add new nodes first, allow the data to rebalance, then decommission as a final step. 
+> ✅ When designing various maintenance procedures that leverage node add/node remove sequence for on-line node swap, be sure to [add new nodes](./node-add.md) first, allow the data to rebalance, then decommission as a final step. 
 
 
 
-### Should Nodes be Manually Drained before Decommission?  
+### Should Nodes be Manually Drained before Decommission?
 
 TLDR; There is no need to complicate the procedure with a manual node drain before decommissioning it, as long as the decommissioning [procedure is robustly implemented](./node-remove.md#procedure-steps) and coordinated with configuration parameters of other components, particularly load balancers and connection pools.
 
@@ -67,7 +67,7 @@ However, a manually node drain could be a helpful remediation tool if a decommis
 
    
 
-3. Remove the node(s) being decommissioned from the *load balancing* configuration.
+3. Remove the node(s) being decommissioned from the *load balancers*' configuration.
 
    
 
