@@ -22,9 +22,9 @@ This procedure may be used for emergency repairs, for example to remove of a run
 Superficially, Decommission and [Drain](./node-stop.md) may appear to be functionally similar actions, yet they are materially different and implementation-wise have separate code paths, *not* sharing configuration/tuning "knobs". 
 
 During the decommission, a node transfers the replicas of all its ranges to other nodes, drains all leases (it's a no-op since at that time there should be no replicas on that node), and closes all SQL client connections to the node. Node decommission implies that the node is not going to return to the cluster.
-Drain transfers the range leaseholders (and raft groups' leaderships) away from the drained node and closes all SQL connections to the node. Node drain implies the node is expected to rejoin the cluster in a near term.
+Drain transfers the range leaseholders (and raft groups' leaderships) away from the drained node and closes all SQL connections to the node, but keeps the data replicas. Node drain implies the node is expected to rejoin the cluster in a near term and reconnect its replicas to their consensus groups.
 
-Decommission is a safe operation from the standpoint of maintaining the cluster's fault tolerance level. A decommissioning action does not allow under-replicated ranges at any point. On the other hand, a node drain (which is a precursor to a node shutdown), if followed by a node process stop, leaves the some ranges under-replicated.
+Decommission is a safe operation from the standpoint of maintaining the cluster's fault tolerance level. A decommissioning action does not allow under-replicated ranges at any point. On the other hand, a node drain (which is a precursor to a node shutdown), if followed by a node process stop, leaves some ranges under-replicated.
 
 A node decommission includes data transfers (raft snapshots) in the amount of data stored on the decommissioning node - commonly hundreds of GBs to TBs. A node drain consists predominantly of light weights metadata operations. Therefore, a node decommission should be expected to take significantly longer than a node drain.
 
