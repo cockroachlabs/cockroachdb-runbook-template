@@ -15,27 +15,30 @@ This procedure may be used for emergency repairs, for example to remove of a run
 
 > ✅ A CockroachDB cluster will *not decommission a node automatically*, under any circumstances. Decommissioning nodes is strictly an operator's prerogative. In particular, a failed node that was declared "dead" and whose hardware was removed, is technically still a member of the cluster until it is removed from the cluster by an operator's action. "Dead" nodes that have not been decommissioned will be continually gossiped and probed by other cluster nodes, in anticipation that a "dead" node may recover and rejoin the cluster.
 
+> ✅ DO NOT circumvent the proper decommission procedure by terminating a node process. For example, in an attempt to expedite a node removal. Terminating a node process, even with a prior drain, leaves the cluster with under-replicated ranges and may lead to a loss of quorum.
+
 
 
 ### Node Decommission vs. Node Drain (Shutdown)
 
-Superficially, Decommission and [Drain](./node-stop.md) may appear to be functionally similar actions, yet they are materially different and implementation-wise have separate code paths, *not* sharing configuration/tuning "knobs". 
+Decommission and [Drain](./node-stop.md) are functionally related, yet distinctly different and meant to be used in different situations.
 
-During the decommission, a node transfers the replicas of all its ranges to other nodes, drains all leases (it's a no-op since at that time there should be no replicas on that node), and closes all SQL client connections to the node. Node decommission implies that the node is not going to return to the cluster.
-Drain transfers the range *leaseholders* (and raft groups' leaderships) away from the drained node and closes all SQL connections to the node, but still keeps data replicas participating in their raft consensus groups. A node draining is a precursor to stopping the node which is then expected to rejoin the cluster in a near term and reconnect its replicas to their raft groups.
+A *node drain* is a precursor to stopping the node which is then expected to rejoin the cluster in a near term and reconnect its replicas to their raft groups. Drain transfers the range *leaseholders* (and raft groups' leaderships) away from the drained node and closes all SQL connections to the node, but still keeps data replicas participating in their raft consensus groups.
+A *node decommission* implies that the node is not going to return to the cluster. During a decommission, the decommissioning node transfers the replicas of all its ranges to other nodes. In the final phase, the decommission executes the [drain steps](./node-stop.md#how-node-drain-is-implemented). Since at that time there should be no replicas on that node, draining of the leaseholders is a no-op. The drain steps are performed solely as a final attempt to facilitate an orderly failover of client SQL connections.
 
-Decommission is a safe operation from the standpoint of maintaining the cluster's fault tolerance level. A decommissioning action does not allow under-replicated ranges at any point. On the other hand, a node drain (which is a precursor to a node shutdown), if followed by a node process stop, leaves some ranges under-replicated.
+A *node decommission* is a safe operation from the standpoint of maintaining the cluster's fault tolerance level. A decommissioning action does not allow under-replicated ranges at any point. On the other hand, a *node drain* (which is a precursor to a node shutdown), if followed by a node process stop, leaves some ranges under-replicated.
 
 > ✅ Stopping a node without decommissioning first, even if stopped after an orderly drain, will leave ranges under-replicated.
 
-A node decommission includes data transfers (raft snapshots) in the amount of data stored on the decommissioning node - commonly hundreds of GBs to TBs. A node drain consists predominantly of light weights metadata operations. Therefore, a node decommission should be expected to take significantly longer than a node drain.
+A *node decommission* includes data transfers (raft snapshots) in the amount of data stored on the decommissioning node - commonly hundreds of GBs to TBs. A *node drain* consists predominantly of light-weight metadata operations. Therefore, a node decommission should be expected to take significantly longer than a node drain.
 
 
 
 ### Node Decommission Implementation Highlights
 
 - To maintain the designed replication factor (RF) at all times during node decommission, a new replica for each range on a decommissioning node is added to some other node in the cluster via a raft snapshot. 
-- Each node (store) sends only 1 snapshot at a time. And any node (store) can be receiving 1 snapshot at a time too.
+- Each node (store) can send only 1 snapshot at a time.
+- Any node (store) can only be receiving 1 snapshot at a time.
 - Range replica snapshots are sent by nodes that are range's leaseholders.
 - The decommissioning node will have a longer queue of snapshot work than other nodes. This is because each non-decommissioning node in the cluster will have to send snapshots for the subset of its leaseholders that have a replica on the decommissioning node, but the decommissioning node will always have to send snapshots for *all* of its leaseholders.
 
@@ -51,9 +54,17 @@ Node(s) decommission, by definition, results in an increased demand for processi
 
 ### Should Nodes be Manually Drained before Decommission?
 
-TLDR; There is no need to complicate the procedure with a manual node drain before decommissioning it, as long as the decommissioning [procedure is robustly implemented](./node-remove.md#procedure-steps) and coordinated with configuration parameters of other components, particularly load balancers and connection pools.
+TLDR; No. Normally there is no need to drain nodes before decommissioning, as long as the decommissioning [procedure is robustly implemented](./node-remove.md#procedure-steps) and coordinated with configuration parameters of other components, particularly load balancers and connection pools.
 
-However, a manually node drain could be a helpful remediation tool if a decommissioning node is malfunctioning or taking an excessively long time to shed its ranges. A manual drain should be fast and the leaseholders distributed evenly across the remaining nodes of the cluster after the drain should be able to send snapshots faster than a long queue of snapshots from one decommissioning node.
+**Considerations**
+
+Since the snapshots for relocating replicas from the decommissioning node(s) are sent from the leaseholders, the decommissioning nodes will be sending the snapshots for *all* of its replicas, thus forming a potentially long queue of snapshots to send.
+
+If the nodes are pre-drained before decommission, the leaseholders will be distributed evenly across the *remaining* nodes, allowing more distributed snapshot senders, which should result in a reduction of the elapsed time of the decommissioning. However that comes at the expense of more load on the remaining cluster nodes, which in general is undesirable. And since the nodes are receiving one snapshot at a time, a reduction in the elapsed time is under 15% based on CRL's nightly regression tests data. The relatively modest elapsed time benefit is generally not a good justification for an increased load on the remaining server during the decommission and why pre-draining is not advised under normal operating conditions.
+
+**When to Pre-Drain**
+
+A manual pre-drain is recommended before decommissioning a malfunctioning node as a part of some emergency procedure. Particularly an when decommissioning an overloaded node that doesn't have CPU or Disk IO headroom.
 
 > ✅ If a manual node drain step is integrated into a decommissioning procedure, ensure that under no circumstances the node process is stopped after a manual drain. Shutting down nodes before decommissioning may result in under-replicated ranges or even a loss of quorum.
 
@@ -100,7 +111,7 @@ However, a manually node drain could be a helpful remediation tool if a decommis
 
    
 
-8. The decommission command *leaves the CRDB process alive* on decommissioned nodes at the end. Shut down the CockroachDB process on decommissioned hosts by sending a shutdown signal (e.g. SIGTERM) to the CRDB process or use Linux service manager if the CRDB process is running as a service. This has to be done locally on all Old Region’s nodes. Disable the CockroachDB service, if used, to prevent it from inadvertently re-starting.
+8. The decommission command *leaves the CRDB process alive* on decommissioned nodes at the end. Shut down the CockroachDB process on decommissioned hosts by sending a shutdown signal (e.g. SIGTERM) to the CRDB process or use Linux service manager if the CRDB process is running as a service. This has to be done locally on all Old Region’s nodes. Disable the CockroachDB service, if used, to prevent it from inadvertently re-starting. If the underlying server, VM or a container will be re-used as a new cluster node, the decommissioned node's store directory needs to be manually cleared. 
 
    
 
