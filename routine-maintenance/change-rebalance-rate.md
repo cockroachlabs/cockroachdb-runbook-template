@@ -20,13 +20,13 @@ The snapshot transfer mechanism is the same, but the transfer priority is differ
 
 **Snapshot Process**
 
-![snapshot transfer](./snapshot1.png)
+![snapshot transfer](./res/snapshot1.png)
 
 
 
 **Snapshot process Zoom-In**
 
-![Snapshot zoom-in](./snapshot2.png)
+![Snapshot zoom-in](./res/snapshot2.png)
 
 - A snapshot encapsulates one range, up to about 512 MB in size
 - A node can send 1 snapshot at a time
