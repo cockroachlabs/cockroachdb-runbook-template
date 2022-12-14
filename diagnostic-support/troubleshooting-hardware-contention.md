@@ -18,7 +18,7 @@ The underlying resource contention *mainly* develops in the underlying *hardware
 
 CPU contention is a concern in its ultimate form - when the demand for CPU exceeds the available CPU resources, i.e. when essential CockroachDB services are starved from CPU.
 
-![Scalability curve](scalability-curve.sm.png)
+![Scalability curve](./res/scalability-curve.sm.png)
 
 ##### Notable points
 
