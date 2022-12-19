@@ -72,7 +72,7 @@ A manual pre-drain is recommended before decommissioning a malfunctioning node a
 
 ### Procedure Steps
 
-1. [Set the *rebalance and recovery rates*](./change-rebalance-rate.md) to 256MB or better. This will allow the cluster to complete transient data transfers and reach the steady state faster.
+1. Prior to executing this procedure for the first time, an operator is reminded to [set the cluster's *rebalance and recovery rates*](./change-rebalance-rate.md) to the value deemed [optimal](./change-rebalance-rate.md#considerations -or-setting-the-max-rates). Higher rates allow the cluster to complete transient data transfers and reach the steady state faster.
 
    
 

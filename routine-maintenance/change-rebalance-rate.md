@@ -38,7 +38,11 @@ The snapshot transfer mechanism is the same, but the transfer priority is differ
 
 ### Considerations for Setting the Max Rates
 
-The default values for the max rates is 32 MB/s. It is very coderivative for most real-world workloads.
+The default values for the max rates is 32 MB/s. It is very conservative for most real-world workloads.
+
+> ✅  Operators are encouraged to weigh in all considerations and set the cluster's max rates once for *all* routine maintenance and emergency operations. Setting the rates to different values by an operating procedure is risky and therefore not recommended.
+
+
 
 **Benefits of Higher Snapshot Rates**
 
