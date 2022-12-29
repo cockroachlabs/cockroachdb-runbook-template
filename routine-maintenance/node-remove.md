@@ -103,7 +103,11 @@ A manual pre-drain is recommended before decommissioning a malfunctioning node a
 
    
 
-6. `cockroach node status <id> --all`
+6. `cockroach node status <id> --all` or observe the node(s)' status in DB Console.
+
+   Confirm that decommissioned node(s)' status is  DECOMMISSIONED. If a node status is "DECOMMISSIONING", some maintenance operations, such as release upgrades, can not proceed.
+
+   *Beware of the following caveats.* If a CLI command to decommission a node exited before the decommissioning was processed in the cluster (for example if the CLI command had `--wait=none`  or if it had `--wait=all` and was interrupted with ^C), the decommission can [likely] run to completion on the server side but the status of the node will stay in "decommissioning" and will never finalize to "decommissioned". This is because the final state is set by the CLI program at the end. If the CLI exist early, it will not have an opportunity to make an underlying API call to finalize the "decommissioned" state. To resolve this, repeat the decommission command, which should promptly succeed and flip the [state](https://www.cockroachlabs.com/docs/stable/ui-cluster-overview-page.html#decommissioned-nodes) first to "UNAVAILABLE", which will then turn into "DECOMMISSIONED" 5 minutes later ([designed behavior](https://www.cockroachlabs.com/docs/stable/ui-cluster-overview-page.html#decommissioned-nodes)).
 
    
 
@@ -111,7 +115,7 @@ A manual pre-drain is recommended before decommissioning a malfunctioning node a
 
    
 
-8. The decommission command *leaves the CRDB process alive* on decommissioned nodes at the end. Shut down the CockroachDB process on decommissioned hosts by sending a shutdown signal (e.g. SIGTERM) to the CRDB process or use Linux service manager if the CRDB process is running as a service. This has to be done locally on all Old Region’s nodes. Disable the CockroachDB service, if used, to prevent it from inadvertently re-starting. If the underlying server, VM or a container will be re-used as a new cluster node, the decommissioned node's store directory needs to be manually cleared. 
+8. The decommission command *leaves the CRDB process alive* on decommissioned nodes at the end. Shut down the CockroachDB process on decommissioned hosts by sending a shutdown signal (e.g. SIGTERM) to the CRDB process or use Linux service manager if the CRDB process is running as a service. This has to be done locally on all Old Region’s nodes. Disable the CockroachDB service, if used, to prevent it from inadvertently re-starting. If the underlying server, VM or a container will be re-used as a new cluster node, the decommissioned node's store directory needs to be manually cleared.
 
    
 
