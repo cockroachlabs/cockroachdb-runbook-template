@@ -35,28 +35,43 @@ Operators can use either of the 3 methods to view the node's software version. N
 
 1) Via SQL interface:
 
-```
-defaultdb> select crdb_internal.node_executable_version();
-  crdb_internal.node_executable_version
------------------------------------------
-  22.1
+```sql
+-- the software version *of the node that the SQL client is connected to*
+
+defaultdb> SELECT node_id, sql_address, build_tag FROM crdb_internal.gossip_nodes WHERE node_id = crdb_internal.node_id();
+  node_id |   sql_address   | build_tag
+----------+-----------------+------------
+        2 | lexington:27002 | v22.1.12
 (1 row)
+
+
+-- the software versions of all nodes of the cluster
+
+defaultdb> SELECT node_id, sql_address, build_tag FROM crdb_internal.gossip_nodes ORDER BY 1;                          
+  node_id |   sql_address   | build_tag
+----------+-----------------+------------
+        1 | lexington:26257 | v21.2.17
+        2 | lexington:27002 | v22.1.12
+        3 | lexington:27003 | v21.2.17
+(3 rows)
 ```
 
-This built-in function returns the software version *of the node that the SQL client is connected to*. 
+
 
 2. Via OS level (shell) command:
 
-```sdfsdf
+```shell
 % cockroach version --build-tag
 v22.1.12
 ```
+
+
 
 3. Via CockroachDB Console
 
    ![](./res/overview.png)
 
-   The software version of the node that *the Console is connected to* is in the upper right area (next to the cluster id) of the "Overview" tab.
+   The software version is in the upper right area (next to the cluster id) of the "Overview" tab.
 
 
 
@@ -64,7 +79,7 @@ v22.1.12
 
 The version of the current *cluster-wide* on-disk format is reported via the cluster setting `version`:
 
-```
+```sql
 defaultdb> show cluster setting version;
   version
 -----------
@@ -83,6 +98,8 @@ defaultdb> show cluster setting version;
 
 - Different major versions of on-disk data format are *incompatible*. The on-disk format can upgraded but can *not* be downgraded. This has a principled effect on available release [downgrade](#release-downgrade) options.
 
+- During a major release finalization, a cluster may run a series of jobs to process *internal* on-disk format upgrades. This processing is automatic and requires no user intervention. During this time the `show cluster setting version` will be reporting a progression of applied internal on-disk format changes, with versions including hyphen separated suffixes.
+
 - Cockroach Labs is enforcing the development practice of maintaining the on-disk format and inter-node communication protocols unchanged within the series of patch releases of a major version. The current practice stipulates, however, that it is permissible to break backwards-compatibility under extraordinary circumstances such as discovered security vulnerability with an extreme impact. Historically, there had been no case of backward incompatible patch releases. 
 
 
@@ -90,27 +107,56 @@ defaultdb> show cluster setting version;
 
 ### Release Upgrade
 
-zzzz
-
-##### Considerations for Production Deployment Release
-
-< UNDER CONSTRUCTION >
-
-zzz
+For procedural guidance, follow the [doc](https://www.cockroachlabs.com/docs/stable/upgrade-cockroach-version.html) as *the* reference.
 
 
 
-##### Procedure
+##### Considerations for Production Deployment's Release Version
 
-zzz
+> Considerations is this section are only for routine, planned software upgrades. Updates due to required new functionality or critical fixes are not in scope herein.
+
+A database software version update requires planning, QA efforts, and IT operations time to apply the update. A common practice within IT organizations is to *minimize the number of software updates* while always running a [supported release](https://www.cockroachlabs.com/docs/releases/release-support-policy.html#current-supported-releases).
+
+A new major version of CockroachDB is released about *every 6 months*. "Skipping" or delaying a major upgrade can not result in time/resource savings because CockroachDB supports major version upgrades from the previous version only.  "Leaping over" a major version upgrade is not possible.
+
+To maintain supportability of the CockroachDB software, an operator at the minimum has to upgrade once to every major release.
+
+Within a major release, the patch release numbers increment monotonously and indicate the stability level progression. In most cases, the most recent patch version within a series is the best choice for a production deployment.
+
+For risk averse operators, the following may be practical:
+
+- Adopt the cadence of major version updates that matches CockroachDB major release cadence - about every 6 months.
+- Stay one major release behind. Cockroach Labs supports 2 latest major releases. When a new major version is released, it's generally the time to upgrade to the version before the latest.
+- There should be no need to make repeated patch upgrades as long as no defect affecting operations is discovered.
+- Determine the earliest patch release candidate that is sufficiently hardened for a production deployment. This would not be an "exact science" but a good faith, educated guess. The Release Notes published in the doc for each patch release include the list of bug fixes that an operator can track. A shrinking list  of bug fixes for a couple of consecutive patch releases  and a perceived "blast radius" of fixed bugs may serve as a gauge of release's stability. Historically, after 5-7 patch releases, the major release is sufficiently hardened for a production deployment and the operator can plan the QA cycle in staging. Lock a production deployment candidate by downloading the latest patch release shortly prior to starting the release validation in QA.
+- In summary, this rule of thumb may work well: "use the latest hardened patch release of the previous major version".
 
 
 
 ### Release Downgrade
 
-< UNDER CONSTRUCTION >
+If a new release upgrade causes operational problems, an operator can undo (downgrade) a patch release upgrade or an *unfinalized* major release upgrade.
 
-zzz
+
+
+##### Patch Release Downgrade
+
+Patch releases are backward-compatible improvements within major versions of CockroachDB. On-disk data format does not change between patch releases.
+
+Operators can update (downgrade or upgrade) the patch release version by "rolling the cluster" and replacing the node executable (binary) with any prior or future patch release within the same major release. There is no finalization during patch release updates.
+
+
+
+##### Major Release Downgrade
+
+*Before* a major release upgrade *is finalized*, the on-disk data format doesn't change, i.e. it matches the previous major version. This means that a major version downgrade (before the cluster was finalized) is the same procedure as a [*patch* release downgrade](#patch-release-downgrade). The operator would "roll the cluster" and revert all node executables to the previous major version.
+
+However, if a major cluster upgrade *has been finalized*, the on-disk data format is upgraded and the cluster can *NOT* be downgraded to any previous major release version. The only available path to revert to the prior major version is restoring a cluster backup.
+
+A risk averse operator would plan precautionary steps and maximize the opportunity for a version downgrade in case a major release upgrade exposed an unexpected issue:
+
+- Always [disable auto-finalization](https://www.cockroachlabs.com/docs/stable/upgrade-cockroach-version.html#step-3-decide-how-the-upgrade-will-be-finalized). After the executables (binaries) on all nodes of the cluster have been upgraded, operate the cluster for several days to gain confidence in the new release. Manually finalize the upgrade when the upgrade is perceived successful.
+- Take a full cluster backup immediately prior to manually finalizing the upgrade. This will provide a restore savepoint should a disruptive issue be discovered after the cluster is finalized.
 
 
 
