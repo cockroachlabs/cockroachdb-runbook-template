@@ -113,7 +113,7 @@ For procedural guidance, follow the [doc](https://www.cockroachlabs.com/docs/sta
 
 ##### Considerations for Production Deployment's Release Version
 
-> Considerations is this section are only for routine, planned software upgrades. Updates due to required new functionality or critical fixes are not in scope herein.
+> Considerations is this section are only for routine, planned software upgrades. Updates due to required new functionality or critical fixes are obviously driven by other considerations not discussed herein.
 
 A database software version update requires planning, QA efforts, and IT operations time to apply the update. A common practice within IT organizations is to *minimize the number of software updates* while always running a [supported release](https://www.cockroachlabs.com/docs/releases/release-support-policy.html#current-supported-releases).
 
