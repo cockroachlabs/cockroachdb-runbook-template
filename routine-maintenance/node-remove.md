@@ -54,7 +54,7 @@ Node(s) decommission, by definition, results in an increased demand for processi
 
 ### Should Nodes be Manually Drained before Decommission?
 
-TLDR; No. Normally there is no need to drain nodes before decommissioning, as long as the decommissioning [procedure is robustly implemented](./node-remove.md#procedure-steps) and coordinated with configuration parameters of other components, particularly load balancers and connection pools.
+TLDR; **No**. Normally there is no need to drain nodes before decommissioning, as long as the decommissioning [procedure is robustly implemented](./node-remove.md#procedure-steps) and coordinated with configuration parameters of other components, particularly load balancers and connection pools.
 
 **Considerations**
 
@@ -64,9 +64,11 @@ If the nodes are pre-drained before decommission, the leaseholders will be distr
 
 **When to Pre-Drain**
 
-A manual pre-drain is recommended before decommissioning a malfunctioning node as a part of some emergency procedure. Particularly an when decommissioning an overloaded node that doesn't have CPU or Disk IO headroom.
+A manual pre-drain may be done before decommissioning a malfunctioning node as a part of some emergency procedure. Particularly when decommissioning an overloaded node that doesn't have CPU or Disk IO headroom.
 
 > ✅ If a manual node drain step is integrated into a decommissioning procedure, ensure that under no circumstances the node process is stopped after a manual drain. Shutting down nodes before decommissioning may result in under-replicated ranges or even a loss of quorum.
+>
+> Also beware that if a pre-drain is done, the operator effectively loses the ability to orderly "cancel" the decommission in progress with [`cockroach node recommission`](https://www.cockroachlabs.com/docs/v22.2/cockroach-node) because there is no online method to "un-drain" (get the leaseholders back to drained node) without a node restart. 
 
 
 
