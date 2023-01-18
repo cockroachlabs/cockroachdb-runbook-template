@@ -426,9 +426,9 @@ Legacy DBMS-s commonly use a lock-based concurrency implementation, whereby enfo
 | Transaction 1 (multi-statement)                              | Transaction 2 (multi-statement)                |
 | ------------------------------------------------------------ | ---------------------------------------------- |
 | BEGIN;                                                       |                                                |
-| SELECT * FROM t WHERE v < 3000;                              |                                                |
+| SELECT * FROM t;                                             |                                                |
 |                                                              | BEGIN;                                         |
-|                                                              | SELECT * FROM t WHERE v < 3000;                |
+|                                                              | SELECT * FROM t;                               |
 | UPDATE t SET v=222 WHERE k=2;   `-- lock k=2`                |                                                |
 |                                                              | UPDATE t SET v=333 WHERE k=3;    `-- lock k=3` |
 | COMMIT;                                                      |                                                |
