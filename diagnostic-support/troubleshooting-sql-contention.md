@@ -4,7 +4,7 @@
 
 ## 1. About Workload Contention
 
-This section includes the *background information, examples, troubleshooting technique and remediation ideas* related to *SQL workload* contention (a related topic of contention for the underlying shared computing resources is discussed in the article [Troubleshooting Hardware Resource Contention](troubleshooting-hardware-contention.md)). It provides a CockroachDB practitioner with essential knowledge and remediation points for possible SQL workload contention conflicts, including:
+This section includes the *background information, examples, troubleshooting technique and remediation ideas* related to *SQL workload* contention. A related topic of contention for the underlying shared computing resources is discussed in the article [Troubleshooting Hardware Resource Contention](troubleshooting-hardware-contention.md). It provides a CockroachDB practitioner with essential knowledge and remediation points for possible SQL workload contention conflicts, including:
 
 1. **[Locking](#3.-locking-conflicts)** conflicts
 2. **[Serializable isolation](#4.-serializable-isolation-conflicts)** conflicts
@@ -497,22 +497,15 @@ Serializable Isolation Conflicts may have the largest negative impact on workloa
 
 Several remediation techniques are available to minimize the impact of isolation conflicts, listed below in the order of a perceived positive impact, most impactful first.
 
-> ✅ **Avoid Isolation Conflicts by Design**
->
-> In a number of situations, isolation conflicts could be avoided:
->
-> - If an application is leveraging a development framework, follow the best practices for that framework.
-> - If the application's custom data access layer implements the transaction logic, pay due attention to serializable isolation realities.
 
 
-
-> ✅ **Follow the best practices for data for development frameworks**
+> ✅ **Avoid Isolation "Conflicts by Design"! Follow the best practices for development frameworks**
 >
-> - **< Under construction >**
-> - For Spring:
->   - Use [Spring Annotations](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb) to bring clarity to transaction management
->   - Eagerly fetching too much (excessive cross joins)
->   - Lazy fetching too little (excessive amounts of queries)
+> - Serializable isolation conflicts can be largely avoided!
+> - If an application is leveraging a development framework, **follow the best practices for the framework** of choice.
+> - Recommended Best Practices Resources:
+>   - [JPA Best Practices Cookbook](https://docs.google.com/document/d/1qJ2WOpiBeKVIdcg1c_r0VSUbB_gNVLVxdkt65ugVpko)   *TODO: This is a protected reference, expected to be published in the public domain*
+>   - [Spring Annotations](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb) 
 
 
 
@@ -524,15 +517,6 @@ Several remediation techniques are available to minimize the impact of isolation
 
 
 
-> ✅ **If conflicts in a multi-statement transaction are unavoidable - use pessimistic locking**
->
-> - The client side `40001` retires can be avoided by using pessimistic locking early in a transaction. Acquiring an early lock on a read with  `SELECT … FOR UPDATE` (SFU) eliminates an opportunity for read invalidation (and a costly retry) later.
-> - While SFU can prevent serializable conflicts by locking early, this technique can also be counterproductive if the lock has a large scope, thus creating more contention. As a rule of thumb - if using SFU, only lock the key(s) that will be subsequently updated in the same transaction. Otherwise avoid SFU, or it may create more locks than necessary.
-> - SFU is effectively a simple-to-implement trade-off of the "expensive" client side `40001` retires for more efficient waits on a lock. While this technique may lessen the impact of isolation conflicts on the workload performance, it does not eliminate the existing contention. It merely replaces the isolation conflicts with locking conflicts that are, as discussed earlier, resolved more efficiently.
-> - Only transaction refactoring that eliminates contention by design is a true *solution* for this contention problem.
-
-
-
 
 > ✅ **Minimize the scope of reads**
 >
@@ -541,6 +525,15 @@ Several remediation techniques are available to minimize the impact of isolation
 > - Design the transactions so SELECTs read the minimum number of tuples required to implement the business logic
 > - Use indexes, particularly covering indexes
 > - Contention is handled at the KV layer - think about conflicts at the level of keys
+
+
+
+> ✅ **If conflicts in a multi-statement transaction are unavoidable - use pessimistic locking**
+>
+> - The client side `40001` retires can be avoided by using pessimistic locking early in a transaction. Acquiring an early lock on a read with  `SELECT … FOR UPDATE` (SFU) eliminates an opportunity for read invalidation (and a costly retry) later.
+> - While SFU can prevent serializable conflicts by locking early, this technique can also be counterproductive if the lock has a large scope, thus creating more contention. As a rule of thumb - if using SFU, only lock the key(s) that will be subsequently updated in the same transaction. Otherwise avoid SFU, or it may create more locks than necessary.
+> - SFU is effectively a simple-to-implement trade-off of the "expensive" client side `40001` retires for more efficient waits on a lock. While this technique may lessen the impact of isolation conflicts on the workload performance, it does not eliminate the existing contention. It merely replaces the isolation conflicts with locking conflicts that are, as discussed earlier, resolved more efficiently.
+> - Only transaction refactoring that eliminates contention by design is a true *solution* for this contention problem.
 
 
 
@@ -620,8 +613,6 @@ In rare circumstances, when an automatic server side retry is not possible and r
 
 
 
-
-
 ## 6. Esoteric Situations that may lead to 40001 Errors
 
 A CockroachDB operator should be aware that:
@@ -652,8 +643,8 @@ Long running transactions may experience `40001` errors due to the [closed times
 
 ##### Remediation of the Closed Timestamp related retry errors
 
-- `SELECT FOR UPDATE` pessimistic locking in the beginning of a long-running transaction can prevent concurrent writers from invalidating its reads by locking the table. *Carefully evaluate the side effects of this change!* It will keep tables locked for the duration of the long-running transaction.
-- Increase `kv.closed_timestamp.target_duration` so that a long-running transaction doesn't get its write timestamp continuously bumped. *Carefully evaluate the side effects of this change!* It can impact latency for changefeeds and follower reads.
+- `SELECT FOR UPDATE` pessimistic locking in the beginning of a long-running transaction can prevent concurrent writers from invalidating its reads by locking the table. *Carefully evaluate the side effects of this change!* It will keep locks for the duration of the long-running transaction.
+- Increase `kv.closed_timestamp.target_duration` so that a long-running transaction doesn't get its write timestamp continuously bumped. *Carefully evaluate the side effects of this change!* It can impact the lag in changefeeds and the latency of follower reads.
 
 ##### Contention Illustration 6.1.  Esoteric error due to closed timestamp property
 
@@ -664,6 +655,7 @@ Long running transactions may experience `40001` errors due to the [closed times
 | BEGIN;                                                       |                                                      |
 | SELECT * FROM t;                                             |                                                      |
 |                                                              | UPDATE t SET v=333 WHERE k=3;    `-- lock k=3`       |
+| *`Interactively switching windows and typing takes a user more than 3 seconds`* |                                                      |
 | UPDATE t SET v=222 WHERE k=2;   `-- lock k=2`                |                                                      |
 | COMMIT;                                                      |                                                      |
 | *`Error 40001: RETRY_SERIALIZABLE - failed preemptive refresh (on commit)`* | `There is no serializable conflict, why this error?` |
@@ -676,7 +668,7 @@ Long running transactions may experience `40001` errors due to the [closed times
 
 | Transaction 1 (multi-statement)                              | Transaction 2 (write, implicit)                |
 | ------------------------------------------------------------ | ---------------------------------------------- |
-| SET  CLUSTER SETTING kv.closed_timestamp.target_duration='30m'; |                                                |
+| SET  CLUSTER SETTING kv.closed_timestamp.target_duration='10m'; |                                                |
 | BEGIN;                                                       |                                                |
 | SELECT * FROM t;                                             |                                                |
 |                                                              | UPDATE t SET v=333 WHERE k=3;    `-- lock k=3` |
@@ -684,9 +676,7 @@ Long running transactions may experience `40001` errors due to the [closed times
 | COMMIT;                                                      |                                                |
 | `success`                                                    |                                                |
 
-> Takeaways from the illustrations 6.1, 6.2:
->
-> - 
+
 
 
 
