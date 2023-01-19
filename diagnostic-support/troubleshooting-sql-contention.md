@@ -504,8 +504,8 @@ Several remediation techniques are available to minimize the impact of isolation
 > - Serializable isolation conflicts can be largely avoided!
 > - If an application is leveraging a development framework, **follow the best practices for the framework** of choice.
 > - Recommended Best Practices Resources:
->   - [JPA Best Practices Cookbook](https://docs.google.com/document/d/1qJ2WOpiBeKVIdcg1c_r0VSUbB_gNVLVxdkt65ugVpko)   *TODO: This is a protected reference, expected to be published in the public domain*
->   - [Spring Annotations](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb) 
+>   -  [JPA Best Practices Cookbook](https://blog.cloudneutral.se/series/jpa-and-crdb) - a series of blogs that outlines best practices for JPA and Hibernate with CockroachDB
+>   - [Spring Annotations](https://blog.cloudneutral.se/spring-annotations-for-cockroachdb) - a guide to using annotations and aspects in Spring to implement a robust transaction scope management.
 
 
 
