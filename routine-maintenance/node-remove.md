@@ -68,7 +68,7 @@ A manual pre-drain may be done before decommissioning a malfunctioning node as a
 
 > ✅ If a manual node drain step is integrated into a decommissioning procedure, ensure that under no circumstances the node process is stopped after a manual drain. Shutting down nodes before decommissioning may result in under-replicated ranges or even a loss of quorum.
 >
-> Also beware that if a pre-drain is done, the operator effectively loses the ability to orderly "cancel" the decommission in progress with [`cockroach node recommission`](https://www.cockroachlabs.com/docs/v22.2/cockroach-node) because there is no online method to "un-drain" (get the leaseholders back to drained node) without a node restart. 
+> Also beware that if a pre-drain is done, the operator effectively loses the ability to orderly "cancel" the decommission in progress with [`cockroach node recommission`](https://www.cockroachlabs.com/docs/stable/create-external-connection.html) because there is no online method to "un-drain" (get the leaseholders back to drained node) without a node restart. 
 
 
 

@@ -81,7 +81,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
     * [Cluster Region Migration](routine-maintenance/cluster-region-migrate.md)
     * [Cluster Resizing](routine-maintenance/cluster-resizing.md)
     * [Server / VM Replacement](routine-maintenance/_under-construction_.md)
-    * [Backup / Restore](routine-maintenance/backup-restore.md)
+    * [Backup / Restore](routine-maintenance/backup-restore)
     * [Change --max-offset](routine-maintenance/change-max-offset.md)
     * [Snapshot Rebalancing Rate](routine-maintenance/change-rebalancing-rate.md)
     * [Change Cluster Settings](routine-maintenance/change-cluster-setting.md)
