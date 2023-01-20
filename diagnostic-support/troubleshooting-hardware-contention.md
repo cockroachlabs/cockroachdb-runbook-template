@@ -1,6 +1,4 @@
-#  **< UNDER CONSTRUCTION >**
-
-
+# < WORK IN PROGRESS >
 
 # Troubleshooting: Hardware Resource Contention
 
@@ -22,5 +20,11 @@ CPU contention is a concern in its ultimate form - when the demand for CPU excee
 
 ##### Notable points
 
-zzzz
+< TODO >
+
+
+
+## Useful Resources
+
+- [Troubleshoot Cluster Setup](https://www.cockroachlabs.com/docs/stable/cluster-setup-troubleshooting.html)
 
