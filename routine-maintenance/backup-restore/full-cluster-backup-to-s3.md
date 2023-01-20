@@ -58,7 +58,7 @@ BACKUP INTO 's3://your-bucket-name/your-cluster-backup-name?AWS_ACCESS_KEY_ID=AK
 
 ### Monitor the status of the backup process:
 
-3. (Optional / one-time step) Create a view simplify the monitoring of yor backup jobs.
+3. (Optional / one-time step) Create a view to simplify the monitoring of your backup jobs.
   This view will display all the **backup** jobs that have been issued, including the current state (status) of the process.
 
 ```sql
