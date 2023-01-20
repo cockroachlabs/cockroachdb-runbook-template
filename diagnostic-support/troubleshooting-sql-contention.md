@@ -6,9 +6,9 @@
 
 This section includes the *background information, examples, troubleshooting technique and remediation ideas* related to *SQL workload* contention. A related topic of contention for the underlying shared computing resources is discussed in the article [Troubleshooting Hardware Resource Contention](troubleshooting-hardware-contention.md). It provides a CockroachDB practitioner with essential knowledge and remediation points for possible SQL workload contention conflicts, including:
 
-1. **[Locking](#3.-locking-conflicts)** conflicts
-2. **[Serializable isolation](#4.-serializable-isolation-conflicts)** conflicts
-3. **[Uncertainty](#5.-uncertainty-conflicts)** conflicts due to a possible clock skew
+1. **[Locking](#3-locking-conflicts)** conflicts
+2. **[Serializable isolation](#4-serializable-isolation-conflicts)** conflicts
+3. **[Uncertainty](#5-uncertainty-conflicts)** conflicts due to a possible clock skew
 
 Databases are purpose-built to manage concurrent access to data. Contention is not intrinsically "bad". Some form of contention is unavoidable when it represents, for example, a reality of business requirements. 
 
@@ -75,7 +75,7 @@ After contention is confirmed to have a principal performance impact (A), the ne
 - The definitions of 2 contending transactions at the level of a normalized statement fingerprint (application->connection->transaction->statement), and
 - The conflict point (key)
 
-Along with an identification of the conflict type. Visual clues  - [locking](#3.2-identifying-locking-conflicts), [isolation](#4.2-identifying-serializable-isolation-conflicts), [uncertainty](#5.2-identifying-uncertainty-conflicts) or [other](#6.-esoteric-situations-that-may-lead-to-40001-errors).
+Along with an identification of the conflict type. Visual clues  - [locking](#32-identifying-locking-conflicts), [isolation](#42-identifying-serializable-isolation-conflicts), [uncertainty](#52-identifying-uncertainty-conflicts) or [other](#6-esoteric-situations-that-may-lead-to-40001-errors).
 
 Instrumentation that provides actionable insights into the workload contention is essential to enable a cluster operator to swiftly act on performance issues caused by contention.
 
@@ -83,7 +83,7 @@ Instrumentation that provides actionable insights into the workload contention i
 
 ##### (C). Resolve the Contention Issues
 
-Remediation techniques are available for each type of conflict -  [locking](#3.3-remediation-of-locking-conflicts), [isolation](#4.3-remediation-of-serializable-isolation-conflicts), [uncertainty](#5.3-remediation-of-uncertainty-conflicts) or [other](#remediation-of-the-closed-timestamp-related-retry-errors).
+Remediation techniques are available for each type of conflict -  [locking](#33-remediation-of-locking-conflicts), [isolation](#43-remediation-of-serializable-isolation-conflicts), [uncertainty](#53-remediation-of-uncertainty-conflicts) or [other](#remediation-of-the-closed-timestamp-related-retry-errors).
 
 
 
