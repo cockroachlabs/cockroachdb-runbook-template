@@ -107,10 +107,10 @@ The implementation of write locks in CockroachDB is leveraging the system of "[w
 
 - Writes acquire locks
 - `SELECTs ... FOR UPDATE` acquire locks, same as writes
-- Writes block reads and writes [from other transactions]
+- Writes block current reads and writes from other transactions (except historical reads and reads from global tables) 
 - Reads do not acquire locks
-- Reads do not block reads or writes [from other transactions]
-- All blocked statements are waiting indefinitely in the same [wait queue](https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer.html#txnwaitqueue) until the blocking transaction releases the lock (aside from situations when a waiting transaction is forcefully disrupted externally, for example by a timeout of as a result of a closed connection)
+- Reads do not block reads or writes from other transactions
+- All blocked statements are waiting indefinitely in a [wait queue](https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer.html#txnwaitqueue) until the blocking transaction releases the lock (aside from situations when a waiting transaction is forcefully disrupted externally, for example by a timeout of as a result of a closed connection)
 - Locks are released when the holding transaction is closed (committed or rolled back)
 
 
@@ -121,7 +121,7 @@ Write-write conflicts may lead to deadlocks when different transactions acquire 
 
 CockroachDB employs a distributed deadlock-detection algorithm that analyzes the [wait queue](https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer.html#txnwaitqueue), which tracks the transactions that are blocked and transactions they are blocked by. When a closed loop is detected, one transaction from a cycle of waiters is forced to rollback and must be [retried](../system-overview/tech-overview-trsansaction-retires.md).
 
-When transactions in a deadlock have the same priority, which transaction is aborted can not be predicted. If the priorities are different, the transaction with a lower priority is aborted.
+When transactions in a deadlock have the same [priority](https://www.cockroachlabs.com/docs/stable/transactions#transaction-priorities), which transaction is aborted can not be predicted. If the priorities are different, the transaction with a lower priority is aborted.
 
 
 
@@ -416,7 +416,9 @@ Legacy DBMS-s commonly use a lock-based concurrency implementation, whereby enfo
 
 - CockroachDB is using a non-lock based optimistic concurrency control, acquiring no read locks.
 - Writes proceed if there is no lock conflict.
+- When a writer detects a conflicting read, the writing transaction is **pushed**.
 - To ensure serializability, CockroachDB *validates that the previous reads haven't changed at the commit time*. If reads are non-repeatable, the transaction in conflict is forced to restart.
+- In other words, a serializability-related transaction restart requires two separate events: something to cause a push, often a conflicting read, *and* a conflicting write to cause a non-repeatable read. 
 - When a transaction is forced to restart, CockroachDB will make the best effort to automatically retry it on the server side, provided the conflict can be discovered in the first statement of a transaction. If autoretry is not possible, a transaction returns a `40001` error for a client side retry.
 
 
@@ -545,11 +547,19 @@ Several remediation techniques are available to minimize the impact of isolation
 
 In CockroachDB, every transaction starts and commits at a timestamp assigned by a CockroachDB node that a client is connected to, called a gateway node. When choosing this timestamp the gateway node does not rely on communication with any other CockroachDB node. The gateway node uses its current time to assign a timestamp to each tuple written by this transaction.
 
-CockroachDB uses multi-version concurrency control (MVCC) - it stores multiple value versions for each tuple, ordered by timestamp. A reader generally returns the latest tuple with a timestamp earlier than the reader's timestamp and ignores tuples with higher timestamps. This is when a potential clock skew needs to be considered.
-
 If a reader's timestamp is assigned by a CockroachDB node with a clock that is behind, it might encounter tuples with higher timestamps that were, in fact, committed before the reader's transaction but their timestamps were assigned by a clock that is ahead.
 
-Tuples with timestamps above the reader’s, but within the `max-offset`, are considered to be ambiguous as to whether they're in the past or the future of the reader. If such an uncertain tuple is encountered, the *reader transaction will generally be forced to restart* at a higher timestamp so all previously uncertain changes are definitely in the past.
+Tuples with timestamps above the reader’s, but within the `max-offset`, are considered to be ambiguous as to whether they're in the past or the future of the reader. If such uncertain tuple is encountered, the *reader transaction is generally forced to restart* at a higher timestamp so all previously uncertain changes are definitely in the past.
+
+> The following example illustrates what would happen without a forced retry:
+>
+> - Application retrieves a connection from its pool and gets a gateway node with a clock that is ahead.
+> - Application inserts a row.
+> - App returns the connection to pool and gets another one, this time to a node with a clock that is behind.
+> - App attempts to read the row it just inserted.
+> - The database sees a row there, so it must have been written "in the past" in real time, but its timestamp is in the future compared to the current gateway!
+>
+> Returning an empty result set at this point would be incorrect because the app knows it just wrote a row. The right thing to do is to advance the transaction's timestamp until after this row that we know is in the past. This is analogous to a "transaction push" in an isolation-related conflict resulting in a transaction retry.
 
 For information about handling transactions that had been forced to restart, review the [transaction retries](../system-overview/tech-overview-trsansaction-retires.md) section.
 
@@ -594,9 +604,9 @@ In rare circumstances, when an automatic server side retry is not possible and r
 
 > ✅ **Reduce a probability of uncertainty conflicts**
 >
-> - The cluster's uncertainty window is configurable. Operators can reduce the probability of uncertainty conflicts by reducing the cluster's [--max-offset](https://www.cockroachlabs.com/docs/v21.2/cockroach-start.html#flags)  setting.
-> - The `max-offset` setting can be safely reduced from the current default 500ms to 250ms or below, if the clock synchronization relies on robust networking and NTP sources & configuration.
-> - Reducing the `max-offset` does not guarantee a measurable improvement. With a smaller uncertainty window, the probability of uncertainty conflicts is lower. If uncertainty retries are observed with a 500 ms  `max-offset`, it's reasonable to expect fewer retries with a 250 ms  `max-offset`.
+> - The most effective approach to reducing a probability of uncertainty conflicts is tightening the NTP clocks synchronization that lowers the true clock offsets. This will have a positive impact for all transactions, short- and long- running.
+> - After tightening the clock synchronization and determining the the true clock offsets, operators can reduce the probability of uncertainty conflicts by reducing the cluster's configurable uncertainty window with [--max-offset](https://www.cockroachlabs.com/docs/v21.2/cockroach-start.html#flags)  setting. Most operating environments rely on robust networking and NTP sources & configuration and the `--max-offset` setting can be safely reduced from the current default 500ms to 250ms or below.
+> - Reducing the `--max-offset` does not guarantee a measurable improvement. With a smaller uncertainty window, the probability of uncertainty conflicts is lower. If uncertainty retries are observed with a 500 ms  `max-offset`, it's reasonable to expect fewer retries with a 250 ms  `--max-offset`. A major factor here is the relationship between the `--max-offset` and the elapsed time of successful transactions. Reducing the `--max-offset` to 250ms helps to reduce uncertainty restarts for transactions that run for more than 250ms.
 
 
 
@@ -608,6 +618,12 @@ In rare circumstances, when an automatic server side retry is not possible and r
 > - Bring additional performance benefits
 >   - Hold locks for less time
 >   - Allow some single-range txns to use a streamlined 1-phase commit fast-path (specifically - UPSERTs, which only touch a single row and specify values for all columns.)
+
+
+
+> ✅ **Leverage application connection affinity**
+>
+> To the extent that connection pooling and load balancing architecture allows it, pinning database client sessions to the same gateway node can help reduce uncertainty restarts. This technique, however, may be prone to undesirable side effects.
 
 
 
