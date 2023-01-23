@@ -432,7 +432,7 @@ Legacy DBMS-s commonly use a lock-based concurrency implementation, whereby enfo
 |                                                              | BEGIN;                                         |
 |                                                              | SELECT * FROM t;                               |
 | UPDATE t SET v=222 WHERE k=2;   `-- lock k=2`                |                                                |
-|                                                              | UPDATE t SET v=333 WHERE k=3;    `-- lock k=3` |
+|                                                              | UPDATE t SET v=333 WHERE k=2;    `-- lock k=2` |
 | COMMIT;                                                      |                                                |
 | *`Error 40001: RETRY_SERIALIZABLE - failed preemptive refresh (on commit)`* | COMMIT;                                        |
 | `rollback`                                                   | `success`                                      |
