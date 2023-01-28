@@ -25,7 +25,7 @@ Regular backups are necessary to mitigate risk of data-loss even with a fault-to
 
 Backup procedures are part of a due-diligence process where action-plans are in place to restore data to known points in time specified by your RPO goals.
 
-**Factors to consider when defining your schedule**
+### Factors to consider when defining your schedule
 
 There is no calculator to define a schedule since many variables need to be explored, ranging from business-continuity requirements to technical considerations that may affect the backup process.
 The below list will help identify focus-areas and testing strategies to consider as your schedule is developed.
