@@ -26,8 +26,15 @@ In practice, CockroachDB operators will strive to automate most of the checks an
 
 **Platform**  is a set of compatible hardware, virtualized or containerized hardware, as well as related structures, on which CockroachDB can be run. Platform examples are bare metal x86\_64, AWS EC2, Google Cloud Platform, Microsoft Azure, VMware vSphere, Docker, Kubernetes.
 
+---
 
+## Monitoring Section
 
+The monitoring section is designed to be independent from the monitoring platform The structure for each alert is
+ - the endpoint to get the metric (http)
+ - the rule(s) to trigger the alerts (english)
+ - what to do when an alert is triggered (english)
+For the purposes of the monitoring section contained in this repo, implementing the rules in the monitoring solution of the user's choice is the operator's responsibility. If the guidance is unclear, please let your account team know and we will provide further assistance. 
 
 ---
 
