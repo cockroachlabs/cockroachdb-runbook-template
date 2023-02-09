@@ -31,9 +31,10 @@ In practice, CockroachDB operators will strive to automate most of the checks an
 ## Monitoring Section
 
 The monitoring section is designed to be independent from the monitoring platform The structure for each alert is
- - the endpoint to get the metric (http)
- - the rule(s) to trigger the alerts (english)
- - what to do when an alert is triggered (english)
+ - The endpoint to get the metric (http)
+ - The rule(s) to trigger the alerts (english)
+ - What to do when an alert is triggered (english)
+
 For the purposes of the monitoring section contained in this repo, implementing the rules in the monitoring solution of the user's choice is the operator's responsibility. If the guidance is unclear, please let your account team know and we will provide further assistance. 
 
 ---
