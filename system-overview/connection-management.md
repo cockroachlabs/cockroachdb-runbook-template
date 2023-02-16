@@ -2,7 +2,7 @@
 
 
 
-# Client Connections: Pooling, Load Balancing, Failover and Failback
+# Client Connections: Pooling, Balancing, Failover and Failback
 
 ### Overview
 
@@ -46,7 +46,7 @@ To handle this case efficiently and without disorderly connection termination, c
 
 - Instead of effective, yet simplistic `roundrobin` load balancing algorithm, configure a method that is aware of the current number of server connections , such as [HAProxy](http://cbonte.github.io/haproxy-dconv/1.7/configuration.html#4-balance)'s  `leastconn` , that routs the new connections to the server with the lowest number of connections. This will solve the problem partially, sending new connections to the new, still underutilized nodes.
 
-- Configure a connection max lifetime in the connection pool. Most connection pools support that feature. This will force a periodic connection rebalancing.  `1 hour` may be a good starting point when fine tuning for specific application requirements. A low value may have an undesirable impact on the workload performance due to a re-connect overhead. The value selection should be coordinated with the [snapshot rebalancing rate](../routine-maintenance/change-rebalancing-rate.md) setting (or rather measurements of the elapsed time to complete node data rebalancing for the given rate setting), so *connections* are rebalanced to new nodes reasonably promptly following a cluster expansion.
+- Configure a connection max lifetime in the connection pool. Most connection pools support that feature. This will force a periodic connection rebalancing.  `1 hour` may be a good starting point when fine tuning for specific application requirements. A low value may have an undesirable impact on the workload performance due to a re-connect overhead. The value selection should be coordinated with the [snapshot rebalancing rate](../routine-maintenance/change-rebalance-rate.md) setting (or rather measurements of the elapsed time to complete node data rebalancing for the given rate setting), so *connections* are rebalanced to new nodes reasonably promptly following a cluster expansion.
 
 
 
@@ -63,34 +63,16 @@ To handle this case efficiently and without disorderly connection termination, c
 Connection management issues to cover:
 
 1. Load Balancing (topics: Layer 4 brief, inter, fall, rise, secondary servers, failover servers, global diagram incl supplimented by DNS a-record). Specifically cover client and server side connection timeouts and idle timeouts.
-2. Connections get unbalanced. This is likely to happen over time even if the cluster topo doesn't change. But it's particularly painful post expansion. The uneven connections distribution will not self-heal. The solution there is max conn life in "hours" and [unverified] LB policy `leastconn`. Basically some mechanism to force conn recycling. This is a "slow" problem to develop and a gives operators hours to correct.
-3. Connection Failover. [No need to worry about Failback, it's adressed in (1).] [Again, just my hunch] this can't be solved by connection life, because connection life in "minutes" may have an adverse impact on performance.] Connection failover is the thing for uninterrupted "everything", including a rolling maintenance. The solution there is primarily a robust application re-try logic (beyond what we currently document) and crdb config settings tuned for the app environment, e.g. lb settings. This is a "fast" problem to develop and has to be solved promptly, in small # of seconds. This is not exactly a [new topic](https://www.google.com/search?q=database+connection+failover).
-
-Connection failover and failback - how to
-
-Even connection distribution - how to, with and without pool. If pool, max-connection-lifetime (not idle connection timeout!) helps. Examples for PGX and npgsql.
+2. Connections will get unbalanced over time. This is likely to happen even if the cluster topo doesn't change. But it's particularly important to address post expansion. The uneven connections distribution will not self-heal. The solution there is max conn life in "hours" or [unverified] LB policy `leastconn`. Basically some mechanism to force conn recycling. This is a "slow" problem to develop and gives the operators hours to correct.
+3. Connection Failover. [No need to worry about Failback, it's addressed in (1).] This can NOT be solved by connection life, because connection life in "minutes" may have an adverse impact on performance. Connection failover is the thing for uninterrupted "everything", including a rolling maintenance. The solution there is primarily a robust [application re-try logic and crdb config settings tuned for the app environment](../routine-maintenance/node-stop.md). This is a "fast" problem to develop and has to be solved promptly, in small # of seconds. This is not exactly a [new or CRDB specific topic](https://www.google.com/search?q=database+connection+failover).
 
 
 
 > The additional `connection_wait` may help is some cases, yet it won’t solve the problems
 
-that sounds right. this solution is primarily meant for customers who cannot or will not add the retry logic you are suggesting for connection failover, and who wish to see zero errors when a node is shutting downour team (sql-exp) has received numerous support escalations of this nature, which is why we are now creating this setting
+This solution is primarily meant for customers who cannot or will not add the retry logic you are suggesting for connection failover, and who wish to see zero errors when a node is shutting downour team (sql-exp) has received numerous support escalations of this nature, which is why we are now creating this setting
 
 
-
-> connection life in “minutes” may have an adverse impact on performance
-
-which performance impacts are you thinking of?
-
-reconnect overhead. client has to wait. server has to do more work
-
-it’s possible v21.2 might have reduced the overhead enough to make ~10 minutes for connection life not have much of an impact on performance
-
-i would not advise customers to force reconnect every couple of minutes. Think hundreds of connections. And pray reconnects don't happen at the same time. 
-
-
-
-[https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#load-balancing](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html#load-balancing)
 
 ---------------
 
@@ -125,6 +107,19 @@ Options:
 - if a connection pool is not used, the application has to invalidate its connections periodically, to force connection rebalancing. Same logic a s max connection life in a connection pool, if used. FWIW, an aggressive idle connection timeout is a bad idea for more than one reason.
 
   
+
+
+
+------------
+
+
+
+this [node shutdown](https://github.com/cockroachlabs/cockroachdb-runbook-template/blob/main/routine-maintenance/node-stop.md) guidance prevents disruptions during any rolling maintenance, such as version upgrade. If followed, the connection failover will be orderly and cause no service interruptions. It requires a coordination between the cluster settings, load balancer settings and connection pooling configuration. The connection pooling gist:
+
+- The size of the connection pool should be x4 times the total vcpus in the cluster, presuming connections are evenly distributed across cluster nodes
+- Set the MIN connections = MAX connections = to the pool size. Adjust only if/when cluster topo changes.
+- Do not set any timeouts, e.g. for idle connections in the pool - this should be done at the app level
+- Set the maximum connection life to something between 30 and 60 minutes. Note this is NOT max idle or similar... this is the max life of connection. Hikari has it (i don't recall the option name, i trust u know which one I'm referring to). Less than 30 minutes may add reconnect overhead, which is non-trivial, particular with TLS. Over 60 mins will make connection rebalancing sluggish. I had good luck with 30 minutes. You must force occasional reconnect to ensure connections are rebalanced as nodes leave and join the cluster, e.g. during regular maintenance roll or when u change the cluster topology.
 
 
 
