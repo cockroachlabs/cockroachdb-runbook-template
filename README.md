@@ -26,25 +26,16 @@ In practice, CockroachDB operators will strive to automate most of the checks an
 
 **Platform**  is a set of compatible hardware, virtualized or containerized hardware, as well as related structures, on which CockroachDB can be run. Platform examples are bare metal x86\_64, AWS EC2, Google Cloud Platform, Microsoft Azure, VMware vSphere, Docker, Kubernetes.
 
----
 
-## Monitoring Section
-
-The monitoring section is designed to be independent from the monitoring platform The structure for each alert is
- - The endpoint to get the metric (http)
- - The rule(s) to trigger the alerts (english)
- - What to do when an alert is triggered (english)
-
-For the purposes of the monitoring section contained in this repo, implementing the rules in the monitoring solution of the user's choice is the operator's responsibility. If the guidance is unclear, please let your account team know and we will provide further assistance. 
 
 ---
 
 ## Contents
 
-1. **[Service or System Overview](system-overview/_under-construction_.md)**
+1. **[Service or System Overview](system-overview)**
     * [Business Overview](system-overview/_under-construction_.md)
         * [Functional System Overview](system-overview/_under-construction_.md)
-        * [Environments and Designations](system-overview/environments-designations.md)
+        * [Environments and Designations](system-overview/_under-construction_.md)
         * [Service / System Owner](system-overview/_under-construction_.md)
         * [Operations and Management Roles and Responsibilities](system-overview/_under-construction_.md)
         * [Hours of Operation](system-overview/_under-construction_.md)
@@ -58,51 +49,44 @@ For the purposes of the monitoring section contained in this repo, implementing 
     * [Technical Overview](system-overview/_under-construction_.md)
         * [Hardware Platform](system-overview/_under-construction_.md)
         * [Virtualization or Containerization](system-overview/_under-construction_.md)
-        * [VM Configuration](system-overview/vm-spec.md)
         * [Operating system](system-overview/_under-construction_.md)
         * [Clock Management](system-overview/_under-construction_.md)
         * [Network Design](system-overview/_under-construction_.md)
         * [Data Volumes](system-overview/_under-construction_.md)
-        * [Growth Rate](system-overview/_under-construction_.md)
         * [Planned Capacity](system-overview/_under-construction_.md)
         * [Cluster Right-Sizing, Expansion Strategy](system-overview/_under-construction_.md)
         * [Cluster Topology and Configuration](system-overview/_under-construction_.md)
         * [Auto-Scaling](system-overview/_under-construction_.md)
-        * [Application Connection Management](system-overview/_under-construction_.md)
-          * [Connection Failover and Failback](system-overview/connection-management.md)
-          * [Connection Pooling and Balancing](system-overview/connection-management.md)
-          * [Connection Retries](system-overview/_under-construction_.md)
-        * [Application Transactions Management](system-overview/_under-construction_.md)
-          * [Implicit vs. Explicit Transactions](system-overview/tech-overview-trsansaction-implicit-explicit.md)
-          * [Transaction Retries](system-overview/tech-overview-trsansaction-retires.md)
+        * [Connection Management (Pooling, Balancing, Failover/Failback](system-overview/connection-management.md))
+        * [Transactions: Implicit vs. Explicit](system-overview/transaction-implicit-explicit.md)
+        * [Transaction Retries](system-overview/transaction-retires.md)
         * [Upstream Dependent Systems](system-overview/system-upstream.md)
         * [Downstream Dependent Systems](system-overview/system-downstream.md)
         * [Ecosystem Tools](system-overview/_under-construction_.md)
         * [Deployment and Configuration management tools](system-overview/config-management-tools.md)
 1. **[Routine Maintenance Procedures](routine-maintenance/_under-construction_.md)**
     * [Open / Close database &quot;gates&quot;](routine-maintenance/_under-construction_.md)
-    * [Force closing application connections](routine-maintenance/_under-construction_.md)
+    * [Force close application connections](routine-maintenance/connections-close.md)
     * [Node Start](routine-maintenance/node-start.md)
-    * [Node Shutdown (Stop)](routine-maintenance/node-shutdown.md)
+    * [Node Shutdown (Stop)](routine-maintenance/node-stop.md)
     * [Add a Node](routine-maintenance/node-add.md)
     * [Remove (Decommission) Node ](routine-maintenance/node-remove.md)
     * [Cluster Region Migration](routine-maintenance/cluster-region-migrate.md)
-    * [Cluster Resizing](routine-maintenance/cluster-resizing.md)
     * [Server / VM Replacement](routine-maintenance/_under-construction_.md)
-    * [Backup / Restore](routine-maintenance/backup-restore)
+    * [Changefeed Management](routine-maintenance/changefeed-management.md)
+    * [Backup / Restore](routine-maintenance/backup-restore/README.md)
     * [Change --max-offset](routine-maintenance/change-max-offset.md)
-    * [Snapshot Rebalancing Rate](routine-maintenance/change-rebalancing-rate.md)
+    * [Change Rebalance Rate](routine-maintenance/change-rebalance-rate.md)
     * [Change Cluster Settings](routine-maintenance/change-cluster-setting.md)
-    * [CockroachDB Version Upgrade](routine-maintenance/upgrade-cockroach.md)
+    * [CockroachDB Version Upgrade](routine-maintenance/release-upgrade.md)
 1. **[The Most Common Problems experienced by CockroachDB users](most-common-problems/README.md)**
-1. **[Monitoring and Alerting](monitoring-alerts/_under-construction_.md)**
+1. **[Monitoring and Alerting](monitoring-alerts)**
     * Monitoring tools
         * [Prometheus](monitoring-alerts/monitoring-prometheus.md)
         * [Dashboard (DB Console, Grafana)](monitoring-alerts/monitoring-dashboard.md)
         * [System tables](monitoring-alerts/monitoring-sys-tables.md)
         * [Message and Error Logs](monitoring-alerts/monitoring-logs.md)
-    * Monitoring Metrics
-        (metrics to watch, alert rules, corrective actions)
+    * [Monitoring Alerts (README)](monitoring-alerts/README.md)
         * [Node CPU](monitoring-alerts/alert-node-cpu.md)
         * [Node CPU Anomaly](monitoring-alerts/alert-node-cpu-anomaly.md)
         * [Node Memory](monitoring-alerts/alert-node-memory.md)
@@ -119,12 +103,11 @@ For the purposes of the monitoring section contained in this repo, implementing 
         * [Non-Incrementing Uptime Counter](monitoring-alerts/alert-non-incrementing-uptime.md)
         * [Version Mismatch](monitoring-alerts/alert-version-mismatch.md)
         * [CA Expiry](monitoring-alerts/_under-construction_.md)
-    * [Alert Response Procedures](monitoring-alerts/_under-construction_.md)
-1. **[Diagnostic and Support](monitoring-alerts/_under-construction_.md)**
+1. **[Diagnostic and Support](diagnostic-support)**
     * [CRDB Error Codes and Descriptions](diagnostic-support/errors-codes.md)
     * [L1 Support (In-House)](diagnostic-support/support-l1.md)
     * [L2 Support (Escalation to Cockroach Labs)](support-l2.md)
-    * [Troubleshooting procedures](diagnostic-support/troubleshooting.md)
+    * [Troubleshooting procedures](diagnostic-support)
       * [Troubleshooting Workload Contention](diagnostic-support/troubleshooting-sql-contention.md)
       * [Troubleshooting Hardware Resource Contention](diagnostic-support/troubleshooting-hardware-contention.md)
 1. **[Emergency Procedures / Operation Continuity](emergency-procedures/_under-construction_.md)**
@@ -132,7 +115,6 @@ For the purposes of the monitoring section contained in this repo, implementing 
     * [Node Wipe](emergency-procedures/node-wipe.md)
     * [Node LSM compaction](emergency-procedures/lsm-compact.md)
     * [CockroachDB server/VM replacement](emergency-procedures/server-vm-replacement.md)
-    * [Disaster Recovery: Node Restore](emergency-procedures/_under-construction_.md)
     * [Disaster Recovery: Database Restore](emergency-procedures/_under-construction_.md)
     * [Recovery from a Quorum Loss](emergency-procedures/_under-construction_.md)
     * [Recovery from logical data corruption](emergency-procedures/corruption-logical.md)
