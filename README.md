@@ -66,7 +66,6 @@ In practice, CockroachDB operators will strive to automate most of the checks an
         * [Deployment and Configuration management tools](system-overview/config-management-tools.md)
 1. **[Routine Maintenance Procedures](routine-maintenance/_under-construction_.md)**
     * [Open / Close database &quot;gates&quot;](routine-maintenance/_under-construction_.md)
-    * [Force close application connections](routine-maintenance/connections-close.md)
     * [Node Start](routine-maintenance/node-start.md)
     * [Node Shutdown (Stop)](routine-maintenance/node-stop.md)
     * [Add a Node](routine-maintenance/node-add.md)
