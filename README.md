@@ -18,7 +18,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
 
 ---
 
-## Terms Used in this Runbook
+## Terms Used in this Document
 
 **CockroachDB Node**  is an instance of a cockroach server process. To underscore this point - a *node* is neither a [virtual] server nor an instance of an OS nor a container. Cockroach Labs strongly recommends running one CockroachDB *node* per one instance of an OS or per container.
 
