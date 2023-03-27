@@ -189,7 +189,7 @@ The best practices for CockroachDB cluster connection pooling are as follows:
 
 - The size of the connection pool should not exceed 4 (four) times the total vcpus in the cluster, presuming connections are evenly distributed across cluster nodes. Many workloads perform best when the maximum number of active connections is between 2 and 4 times the number of CPU cores in the cluster.
 - Configure the pool with the MIN connections = MAX connections = the connection pool size. Adjust when cluster topology changes.
-- Do not set tight, preferably any *idle -anything* timeouts, e.g. for idle connections in the pool. This is best done in the application tier.
+- Do not set tight *idle -anything* timeouts, e.g. for idle connections in the pool. This is best done in the application tier.
 - Set the *maximum connection life* to something between 30 and 60 minutes, as recommended in the [connection balancing](#connection-balancing) section. Less than 30 minutes may add a non-trivial re-connect overhead, particular with TLS. Over 60 minutes may make connection rebalancing sluggish.
 
 From a practical standpoint, connections pool products have either in-process (a library linked into application executable) or out-of-process (external process).
