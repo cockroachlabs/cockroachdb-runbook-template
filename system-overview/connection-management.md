@@ -215,7 +215,7 @@ The connection management benefits with external pools naturally come at the cos
 The sizing method for PgBouncer is as follows:
 
 - An instance of PgBouncer running on 1 core and 2GB RAM handles up to 5,000 incoming (application side) connections and up to 96 outgoing (CockroachDB database) connections
-- The total cluster connection sizing rule for PgBouncer is the same [general rule](#connection-pooling) - not exceed 4 times the total vcpus in the cluster
+- The total cluster connection sizing rule for PgBouncer is the same [general rule](#connection-pooling) - do not exceed 4 times the total vcpus in the cluster
 - PgBouncer pools should be deployed in a redundant configuration, e.g. at least 2. However, using many PgBouncer pools defeats the goal of an effective workload concurrency (i.e. connection) governance. Thus a typical number of PgBouncer pools per environment is between 2 and 4.
 
 Below is a real world `pgbouncer.ini` example: 
