@@ -12,7 +12,7 @@ For continuous service availability, database connectivity requires redundancy a
 - client connections routing only to healthy nodes of the cluster
 - [rebalances](#connection-balancing) client connections upon a database cluster size or topology change, in orchestration with connection pool settings
 
-***[Connection pooling](#connection-pooling)*** (CP) serves two important functions:
+***[Connection pooling](#connection-pooling)*** (CP) serves these important functions:
 
 - alleviates the open/close connection overhead
 - provides workload concurrency governance
