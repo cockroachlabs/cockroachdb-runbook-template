@@ -22,7 +22,7 @@ Seconds until enterprise license expiry. If no license is present, this metric i
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
-| WARNING  | Less than 2592000 seconds (30 days) until enterprise license expiry |
+| WARNING  | Less than 1814400 seconds (3 weeks) until enterprise license expiry |
 | CRITICAL | Less than 259200 seconds (3 days) until enterprise license expiry |
 
 ### Alert Response
