@@ -12,7 +12,6 @@ The list is current as of CockroachDB version v23.1. The version of Datadog agen
 
 ### Essential Monitoring Metrics
 
-asdasd
 
 
 
