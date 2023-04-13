@@ -81,8 +81,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
 1. **[The Most Common Problems experienced by CockroachDB users](most-common-problems/README.md)**
 1. **[Monitoring and Alerting](monitoring-alerts)**
     * Monitoring tools
-        * [Prometheus](monitoring-alerts/monitoring-prometheus.md)
-        * [Dashboard (DB Console, Grafana)](monitoring-alerts/monitoring-dashboard.md)
+        * [Custom Dashboard (100 Essential Metrics to Monitor in Grafana, Datadog)](monitoring-alerts/monitoring-dashboard-custom.md)
         * [System tables](monitoring-alerts/monitoring-sys-tables.md)
         * [Message and Error Logs](monitoring-alerts/monitoring-logs.md)
     * [Monitoring Alerts (README)](monitoring-alerts/README.md)
