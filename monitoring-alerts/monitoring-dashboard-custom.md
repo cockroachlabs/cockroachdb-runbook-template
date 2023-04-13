@@ -14,7 +14,6 @@ The list is current as of CockroachDB version v23.1. The version of Datadog agen
 
 
 
-
 | CockrochDB  Prometheus Metric Name                  | Metric Name in Datadog               | Category                | Description                                                  | Narrative                                                    |
 | :-------------------------------------------------- | :----------------------------------- | :---------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
 | sys.cpu.combined.percent-normalized                 | sys.cpu.combined.percent.normalized  | Platform                | Current user+system CPU  percentage across the whole machine, normalized 0-1 by number of cores | Provides a practical  "at-a-glance" view into the level of %CPU utilization of the  underlying server, virtual server or a container hosting the CRDB node  process. It includes non-CRDB usage. If 1 (100%) - the CPU is overloaded.  CRDB nodes should not be running in this environment/state for prolonged  periods of time (hours). |
@@ -99,7 +98,7 @@ The list is current as of CockroachDB version v23.1. The version of Datadog agen
 
 
 
-### Optional Changefeed Monitoring Metrics
+### Essential Monitoring Metrics for Changefeeds
 
 If changefeeds are created in a CockroachDB cluster, monitor these additional changefeeds -related metrics in your custom dashboards: 
 
@@ -116,7 +115,7 @@ If changefeeds are created in a CockroachDB cluster, monitor these additional ch
 
 
 
-### Optional Row-Level TTL Monitoring Metrics
+### Essential Monitoring Metrics for Row-Level TTL
 
 If Row-Level TTL are configured for any table(s) in a CockroachDB cluster, monitor these additional Row-Level TTL -related metrics in your custom dashboards: 
 
