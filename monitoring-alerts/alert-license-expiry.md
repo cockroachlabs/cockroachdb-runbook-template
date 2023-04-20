@@ -1,5 +1,3 @@
-seconds_until_enterprise_license_expiry	gauge	
-
 # Alert: Enterprise License Expiry
 
 ### Purpose of this Alert
