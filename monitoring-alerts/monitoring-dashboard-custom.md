@@ -14,7 +14,7 @@ The list is current as of CockroachDB version v23.1. The version of Datadog agen
 
 
 
-| CockrochDB 23.1 Metric Name                         | Metric Name in Datadog<br />(add `cockroachdb.` leading prefix) | Category                | Description                                                  | Narrative                                                    |
+| CockroachDB 23.1 Metric Name                         | Metric Name in Datadog<br />(add `cockroachdb.` leading prefix) | Category                | Description                                                  | Narrative                                                    |
 | :-------------------------------------------------- | :----------------------------------------------------------- | :---------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
 | sys.cpu.combined.percent-normalized                 | sys.cpu.combined.percent.normalized                          | Platform                | Current user+system CPU  percentage across the whole machine, normalized 0-1 by number of cores | Provides a practical  "at-a-glance" view into the level of %CPU utilization of the  underlying server, virtual server or a container hosting the CRDB node  process. It includes non-CRDB usage. If 1 (100%) - the CPU is overloaded.  CRDB nodes should not be running in this environment/state for prolonged  periods of time (hours). This metric used in DBConsole in nodes' CPU utilization graphs. |
 | sys.cpu.user.percent                                | sys.cpu.user.percent                                         | Platform                | Current user CPU percentage  consumed by the CRDB process    | %CPU usage at the user level by  the CRDB node process [only]. This is similar to the Linux top command  output. The metric value can be more than 1 (100%) on multi-core systems.  It's best to combine user+system metrics. |
@@ -102,7 +102,7 @@ The list is current as of CockroachDB version v23.1. The version of Datadog agen
 
 If changefeeds are created in a CockroachDB cluster, monitor these additional changefeeds -related metrics in your custom dashboards: 
 
-| CockrochDB 23.1 Metric Name       | Metric Name in Datadog (add `cockroachdb.` leading prefix) | Category           | Description                                                  | Narrative                                                    |
+| CockroachDB 23.1 Metric Name       | Metric Name in Datadog (add `cockroachdb.` leading prefix) | Category           | Description                                                  | Narrative                                                    |
 | --------------------------------- | ---------------------------------------------------------- | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | changefeed.running                | changefeed.running                                         | Jobs - Changefeeds | Number of currently running  changefeeds, including sinkless | This tracks the total number of all running changefeeds.     |
 | jobs.changefeed.currently_paused  | [SUBMITTED TO DATADOG]                                     | Jobs - Changefeeds | Number of changefeed jobs  currently considered Paused       | Changefeed jobs should not be  paused for long time b/c the protected timestamp prevent garbage collections.  This is a safety catch to guard against an inadvertent pause. Consider  setting an alert as a hedge for an oversight/operational error. |
@@ -119,7 +119,7 @@ If changefeeds are created in a CockroachDB cluster, monitor these additional ch
 
 If Row-Level TTL are configured for any table(s) in a CockroachDB cluster, monitor these additional Row-Level TTL -related metrics in your custom dashboards: 
 
-| CockrochDB 23.1 Metric Name                       | Metric Name in Datadog  (add `cockroachdb.` leading prefix) | Category       | Description                                                  | Narrative                                                    |
+| CockroachDB 23.1 Metric Name                       | Metric Name in Datadog  (add `cockroachdb.` leading prefix) | Category       | Description                                                  | Narrative                                                    |
 | ------------------------------------------------- | ----------------------------------------------------------- | -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | jobs.row_level_ttl.resume_completed               | [SUBMITTED TO DATADOG]                                      | Jobs - Row TTL | Number of row_level_ttl jobs  which successfully resumed to completion | If TTL is enabled, this should  be nonzero and correspond to the ttl_cron setting that was chosen. If it's  zero, it means the job isn't running |
 | jobs.row_level_ttl.resume_failed                  | [SUBMITTED TO DATADOG]                                      | Jobs - Row TTL | Number of row_level_ttl jobs  which failed with a non-retriable error | This should remain at zero.  Repeated errors means the TTL job is not deleting data. |
