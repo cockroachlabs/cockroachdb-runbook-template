@@ -32,7 +32,7 @@ CockroachDB implements two types of leases - [expiration-based](https://www.cock
 
 Epoch-based lease implementation relies on system ranges that, in turn, rely on expiration-based leases.
 
-Expiration-based leases have better availability characteristics than epoch-based leases. They do not rely on a single liveness range for availability and will regularly verify that the range lease is functional by performing a Raft roundtrip to extend the lease. Unlike epoch-based leases, a *liveness range failure does not affect expiration-based leases on other nodes*, removing the liveness range as a temporary single point of failure. With epoch-based leases, the liveness leaseholder loss will cause have a cluster-wide implications (albeit temporary), while with expiration-based leases only leases owned by the failed node are affected.
+Expiration-based leases have better availability characteristics than epoch-based leases. They do not rely on a single liveness range for availability and will regularly verify that the range lease is functional by performing a Raft roundtrip to extend the lease. Unlike epoch-based leases, a *liveness range failure does not affect expiration-based leases on other nodes*, removing the liveness range as a temporary single point of failure. With epoch-based leases, the liveness leaseholder loss will have a cluster-wide implications (albeit temporary), while with expiration-based leases only leases owned by the failed node are affected.
 
 The expiration-based leases have shorter data availability restoration time in all leaseholder failure scenarios such as crashes, network partitions and disk stalls.
 
@@ -43,7 +43,7 @@ For a CockroachDB writes and consistent reads to work, the following is required
 - A gateway node `N[gw]` for the query needs access to data range leaseholder node `N[dl]`
 - The data range leaseholder `N[dl]` must be connected to the Raft leader `N[dl-rl]` of the data range group and the Raft leader `N[dl-rl]` must be connected to a quorum of its replicas.
 
-For ranges with epoch-based leases there is, however, and additional requirement:
+For ranges with epoch-based leases there is, however, an additional requirement:
 
 1) The data range leaseholder `N[dl]`, to be "alive" and keep its leases, needs to *write* to its system liveness range. This means the system liveness range leaseholder `N[ll]` needs to be accessible, and also connected to `N[ll-rl]` and a quorum of its replicas.
 
@@ -63,6 +63,8 @@ As of CockroachDB v23.1, an operator can mitigate the business impact of a data 
 
 - [Blast radius](#blast-radius-control), refers to the scale of data service disruption, i.e. whether a disruption affects access to all or only some data;
 - [Maximum duration](#maximum-duration-controls), refers to the longest possible time interval, in seconds, during which some or all data remains  inaccessible.
+
+
 
 #### Blast Radius Control
 
