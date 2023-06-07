@@ -1,8 +1,8 @@
-# Technical Overview: Implicit vs. Explicit Transactions
+# Transactions: Implicit vs. Explicit
 
 
 
-### About Implicit and Explicit Transactions
+### Definitions of Implicit and Explicit Transactions
 
 An *implicit transaction* is a single SQL statement transaction that doesn't use `BEGIN` / `COMMIT` block and is committed automatically.
 
