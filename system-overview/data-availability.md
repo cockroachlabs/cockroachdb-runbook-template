@@ -121,19 +121,26 @@ The maximum data unavailability interval is estimated in the table [above](#maxi
 
 #### Partial network partitions
 
-*< THIS SECTION IS WORK IN PROGRESS >*
+A partial network partitioning is a network fault that disrupts communication among some but not all nodes in a cluster. 
 
-*Epoch-based leases can become non-functional under certain forms of partial network partitions if the leaseholder can't reach the Raft leader but is able to heartbeat its liveness record. Expiration-based leases are less vulnerable to this, but there are known cases where partial network partitions may result in cluster "deadlocks". The plan of record is to address all known issues and ensure partial network partitions can't cause a prolonged complete service outage by v23.2.*
+Partial network partitions are exceedingly rare in redundantly provisioned networks. The most common cause of a partial network partition is a misconfiguration error in firewall rules and/or routing tables.
 
-*typically a result of an operator error (misconfiguration errors in firewall rules and/or routing tables)*
+The vast majority of the situations arising from partial network partitions are orderly/automatically handled by CockroachDB. However, there are esoteric situation that may require operator's manual intervention.
 
-*< THIS SECTION IS WORK IN PROGRESS >*
+Epoch-based leases can become non-functional under certain forms of partial network partitions if the leaseholder can't reach the Raft leader but is able to heartbeat its liveness record. Expiration-based leases are less vulnerable to this, but there are known cases where partial network partitions may result in cluster being "stuck" until a partial network partition is either resolved or turned into a full network partition.
+
+If a CockroachDB cluster gets "stuck" due to a partial network partitioning, it will continue retrying faulty network connection indefinitely. As soon as the network fault is cleared, the cluster will automatically resume normal operations.
+
+The plan of record is to address all known issues and ensure that partial network partitions can't cause a prolonged service outage by v23.2.
 
 
 
 #### Asymmetric network partitions
 
-As of CockroachDB v23.1, an [enhancement](https://github.com/cockroachdb/cockroach/pull/94778) eliminates the need for special handling of asymmetric partitions. By implementing a mandatory by directional RPC connections, all edge cases pertinent to asymmetric network partitions are promoted to partial of complete network partitions.
+
+A partial network partitioning is a network fault whereby a node can send requests to a peer node, but can not receive from that node.
+
+As of CockroachDB v23.1, an [enhancement](https://github.com/cockroachdb/cockroach/pull/94778) eliminates the need for special handling of asymmetric partitions. By implementing a mandatory bidirectional RPC connections, all edge cases pertinent to asymmetric network partitions are promoted to partial of complete network partitions.
 
 
 
@@ -145,9 +152,11 @@ The maximum data unavailability intervals due to [stalls](https://www.cockroachl
 
 ***The disk stall detection can be tuned*** to meet maximum data availability disruption using the following controls:
 
-- `COCKROACH_ENGINE_MAX_SYNC_DURATION_DEFAULT` environment variable or its equivalent cluster setting `storage.max_sync_duration` - sets the max allowable time an IO operation can be waiting in the storage layer. Default is 20 seconds.
-- `COCKROACH_LOG_MAX_SYNC_DURATION` environment variable (there is no equivalent cluster setting) - sets the max allowable time an IO operation can be waiting in the message logging framework. Default is 30 seconds.
+- `COCKROACH_ENGINE_MAX_SYNC_DURATION_DEFAULT` environment variable or its equivalent cluster setting `storage.max_sync_duration` - sets the max allowable time an IO operation can be waiting in the storage layer. Default is 20 seconds. If both the cluster setting and 
+- `COCKROACH_LOG_MAX_SYNC_DURATION` environment variable (there is no equivalent cluster setting) - sets the max allowable time an IO operation can be waiting in the message logging framework. Default is 20 seconds.
 
-These two settings should be adjusted to the same value.
+These two settings should always be set to the same value.
 
-***For example***, if the maximum data unavailability must be limited to 20 seconds, set both `COCKROACH_ENGINE_MAX_SYNC_DURATION_DEFAULT` and `COCKROACH_LOG_MAX_SYNC_DURATION` to 15 seconds.
+Setting these settings to a low value (less than 5 seconds) should be avoided because it can result in a "false positive" disk stall detection, triggering an unnecessary node panic.
+
+***For example***, if the maximum data unavailability must be limited to 20 seconds, set both `COCKROACH_ENGINE_MAX_SYNC_DURATION_DEFAULT` and `COCKROACH_LOG_MAX_SYNC_DURATION` to 10 seconds.
