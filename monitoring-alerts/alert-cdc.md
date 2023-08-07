@@ -1,26 +1,109 @@
-# Alert: Changefeed Falling Behind
+> 
+>
+> ✅  During rolling  maintenance, the changefeed jobs restart following node restarts.
+>
+> Operators can **mute alerts described below during routine maintenance procedures** to avoid unnecessary distractions.
+>
+> 
+
+
+
+------
+
+# Alert: Changefeed Failure
 
 ### Purpose of this Alert
 
-Changefeed has fallen behind. This can be due to cluster capacity or changefeed sink availability. 
+Changefeeds can suffer permanent failures (that the jobs system will not try to restart). Any increase in this counter should prompt an operator's  investigative action.  
 
 ------
 
 ### Monitoring Metric
 
 ```
-(max(changefeed_max_behind_nanos{job="crdb"})/1000000000) > 60
+changefeed.failures
 ```
+
+### Alert Rule
+
+| Tier     | Definition                                    |
+| -------- | --------------------------------------------- |
+| CRITICAL | If the number of failures is greater than `0` |
+
+
+### Alert Response
+
+1. If the alert goes off during cluster maintenance, mute it. Otherwise start investigation with the query:
+
+```sql
+select job_id, status,((high_water_timestamp/1000000000)::int::timestamp)-now() as "changefeed latency",created, left(description,60),high_water_timestamp from crdb_internal.jobs where job_type = 'CHANGEFEED' and status in ('running', 'paused','pause-requested') order by created desc;
+```
+
+2. If the cluster is not undergoing maintenance, check the health of sink endpoints. In case of Kafka, check for sink connection errors such as  `ERROR: connecting to kafka: path.to.cluster:port: kafka: client has run out of available brokers to talk to (Is your cluster reachable?)`
+
+
+
+
+
+------
+
+# Alert: Frequent Changefeed Restarts
+
+### Purpose of this Alert
+
+Changefeed automatically restart in case of transient errors. However "too many" restarts (outside of a routine maintenance procedure) may be due to a systemic condition and should be investigated.  
+
+------
+
+### Monitoring Metric
+
+```
+changefeed.error_retries
+```
+
+### Alert Rule
+
+| Tier    | Definition                                                   |
+| ------- | ------------------------------------------------------------ |
+| WARNING | If number of restarts is greater than `50` for more than `15 minutes` |
+
+
+### Alert Response
+
+Same as when responding to Changefeed Failures.
+
+
+
+
+
+------
+
+# Alert: Changefeed Falling Behind
+
+### Purpose of this Alert
+
+Changefeed has fallen behind. Determined by the end to end lag between a committed change and that change applied at  destination. This can be due to cluster capacity or changefeed sink availability.
+
+-----
+
+
+### Monitoring Metric
+
+```
+changefeed.commit_latency
+```
+
 
 ### Alert Rule
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
-| CRITICAL | Max changefeed latency for any changefeed is greater than `15m` |
-| WARNING  | Max changefeed latency for any changefeed is greater than `10m` |
+| WARNING  | Max end to end lag for any changefeed is greater than `10 minutes` |
+| CRITICAL | Max end to end lag for any changefeed is greater than `15 minutes` |
 
 
 ## Alert Response
+
 1. Open changefeeds metrics dashboard for the cluster (e.g. https://url/#/metrics/changefeeds/cluster) and check max latency
 
 Alternatively, individual changefeed latency can be verified by using the SQL cli
@@ -43,75 +126,35 @@ PAUSE JOB 681491311976841286;
 RESUME JOB 681491311976841286;
 ```
 
-5. The changefeed latency may not progress after above steps due to lack of cluster resources, availability of changefeed sink, and etc. Contact Cockroach Labs support.
+5. The changefeed latency may not progress after above steps due to lack of cluster resources, availability of changefeed sink, etc.  Escalate to L2 Support.
 
 
-
-------------
-
-
-
-# Alert: Frequent Changefeed Restarts
-
-### Purpose of this Alert
-
-Changefeed can restart frequently during cluster upgrades when job coordinator duties are passed around from node to node or when the changefeed sinks are not available. Use the steps below to identify the cause.
-
-------
-
-### Monitoring Metric
-
-```
-sum(changefeed_error_retries{job="crdb"}) - sum(changefeed_error_retries{job="crdb"} offset 2h)
-```
-
-### Alert Rule
-
-| Tier    | Definition                                                   |
-| ------- | ------------------------------------------------------------ |
-| WARNING | If number of restart is greater than `30` for more than `1800s` |
-
-
-
-### Alert Response
-
-1. If the changefeeds must be paused during cluster upgrades and this alert is raised, mute this alert and closely monitor the changefeed latency using the query below.
-
-```sql
-select job_id, status,((high_water_timestamp/1000000000)::int::timestamp)-now() as "changefeed latency",created, left(description,60),high_water_timestamp from crdb_internal.jobs where job_type = 'CHANGEFEED' and status in ('running', 'paused','pause-requested') order by created desc;
-```
-
-2. If the cluster is not undergoing maintenance, check the health of sink endpoints (e.g. AWS S3, Kafka). You can check Scalyr for sink connection errors - e.g. `ERROR: connecting to kafka: path.to.cluster:port: kafka: client has run out of available brokers to talk to (Is your cluster reachable?)`
-
-3. If there are no issues with the sink endpoints and there are no cluster maintenance, contact Cockroach Labs support.
 
 
 
 -----------------
 
-
-
-# Alert: Changefeed is Stopped
+# Alert: Changefeed has been Paused for long time 
 
 ### Purpose of this Alert
 
-This alert is raised when changefeed jobs are cancelled or paused. Changefeed can be paused from SQL cli or when an error is encountered (if created with `on_error = 'pause'`). 
+A hedge against an operational error. Changefeed jobs should not be  paused for long time b/c the protected timestamp prevents garbage collections.  This is a safety catch to guard against an inadvertently "forgotten" pause. 
 
 ------
 
 ### Monitoring Metric
 
 ```
-(sum(jobs_changefeed_currently_running{job="crdb"})) - (sum(jobs_changefeed_currently_running{job="crdb"} offset 5m))
+jobs.changefeed.currently_paused
 ```
+
 
 ### Alert Rule
 
 | Tier     | Definition                                                   |
 | -------- | ------------------------------------------------------------ |
-| CRITICAL | The number of stopped changefeed is greater than `0` for more than `600s` |
-| WARNING  | The number of stopped changefeed is greater than `0` for more than `300s` |
-
+| WARNING  | The number of paused changefeeds is greater than `0` for more than `15 minutes` |
+| CRITICAL | The number of paused changefeeds is greater than `0` for more than `60 minutes` |
 
 
 ## Alert Response
@@ -122,8 +165,7 @@ This alert is raised when changefeed jobs are cancelled or paused. Changefeed ca
 select job_id, status,((high_water_timestamp/1000000000)::int::timestamp)-now() as "changefeed latency",created, left(description,60),high_water_timestamp from crdb_internal.jobs where job_type = 'CHANGEFEED' and status in ('running', 'paused','pause-requested') order by created desc;
 ```
 2. If all the changefeeds are in `running` state, one or more feed may have ran into an error and recovered. Check the UI (e.g. `https://<cluster_url>/#/metrics/changefeeds/cluster`) for number of changefeed restarts. 
+3.  Resume paused changefeed(s) with the job id (e.g. `RESUME JOB 681491311976841286;`).
 
-3. If any of the changefeeds are paused, try resume with the job id (e.g. `RESUME JOB 681491311976841286;`).
 
-4. Contact Cockroach Labs support if the changefeed cannot be restarted.
 

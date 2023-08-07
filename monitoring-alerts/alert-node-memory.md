@@ -1,34 +1,34 @@
-# Alert: Node's Memory Utilization
+# Alert: Node Memory Utilization
 
 ### Purpose of this Alert
 
-Unbalanced utilization of CockroachDB nodes in a cluster may negatively affect the cluster's performance and stability, with some nodes getting overloaded while others remain relatively underutilized. Potential causes of node hotspots are outlined in the "Hotspots" Section of [the common problems experienced by CockroachDB users](../most-common-problems/README.md).
-
-
-
-Health rule violation event. Node is low on memory.
+I node with high memory utilization is a cluster stability risk. Potential causes of high memory utilization are outlined in "Insufficient RAM" section of [the common problems experienced by CockroachDB users](../most-common-problems/README.md).
 
 
 
 ------
 
+### Monitoring Metric
+
+```
+sys.rss
+```
+
+
+
 ### Alert Rule
 
-```
-Node Memory Utilization exceeds 90% for 1 hour
-```
+| Tier     | Definition                                      |
+| -------- | ----------------------------------------------- |
+| WARNING  | Node Memory Utilization exceeds 80% for 4 hours |
+| CRITICAL | Node Memory Utilization exceeds 90% for 1 hour  |
 
 
-### Alert Tier
-
-```
-WARNING
-```
 
 
 ### Alert Response
 
-```
-<Response varies depending on the Tier (severity of potential consequences)>
-```
+High memory utilization is a prelude to a node's OOM (process termination by the OS when the system is critically low on memory). OOM condition is not expected to occur if a CockroachDB cluster is provisioned and sized per Cockroach Labs guidance:
+
+- All CockroachDB VMs are provisioned with [sufficient RAM](https://www.cockroachlabs.com/docs/stable/recommended-production-settings#memory).
 

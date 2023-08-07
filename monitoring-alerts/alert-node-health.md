@@ -1,4 +1,20 @@
+
+
+# UNDER CONSTRUCTION
+
+> 
+>
+> ✅  During rolling maintenance and/or planned cluster resizing, the nodes' state and count will be changing. 
+>
+> Operators can mute alerts described below during routine maintenance procedures to avoid unnecessary distractions.
+>
+> 
+
+
+
 # Alert: Heartbeat Latency
+
+
 
 ### Purpose of this Alert
 
