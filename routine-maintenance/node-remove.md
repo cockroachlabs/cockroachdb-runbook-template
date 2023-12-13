@@ -90,7 +90,7 @@ A manual pre-drain may be done before decommissioning a malfunctioning node as a
 
    `cockroach node decommission <space separated list of node ids> --host=…`
 
-   decommissioning all nodes at once is expected to work best. Alternatively decommission 1 node at a time, but ensure that only one `cockroach node decommission` command runs at a time.
+   decommissioning all nodes at once is expected to work best. Alternatively decommission 1 node at a time.
 
    
 
