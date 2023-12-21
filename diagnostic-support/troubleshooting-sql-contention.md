@@ -129,7 +129,7 @@ When transactions in a deadlock have the same [priority](https://www.cockroachla
 
 The common types of contention scenarios are illustrated with easy-to-follow SQL examples. They may provide CockroachDB cluster operators with an additional method of learning the insights of contention handling, with SQL "scratch pad" experiments.
 
-> Contention scenario illustrations in this section include both [implicit and explicit transactions](../system-overview/tech-overview-trsansaction-implicit-explicit.md). If a sequence of SQL statements starts with a `BEGIN`, it denotes an explicit transaction. Otherwise a transaction is implicit, single-statement.
+> Contention scenario illustrations in this section include both [implicit and explicit transactions](../system-overview/trsansaction-implicit-explicit.md). If a sequence of SQL statements starts with a `BEGIN`, it denotes an explicit transaction. Otherwise a transaction is implicit, single-statement.
 
 ##### Setup for All Contention Illustrations
 
