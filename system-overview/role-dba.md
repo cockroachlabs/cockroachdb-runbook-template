@@ -124,8 +124,8 @@ GRANT SYSTEM  CANCELQUERY               TO dba; -- enable CANCEL SESSION / CANCE
 #### Authorize DBA to View and Control Cluster JOBs
 
 ```sql
-GRANT SYSTEM  VIEWJOB                   TO dba; -- 															NOT in 22.2
-GRANT SYSTEM  CONTROLJOB                TO dba; -- 															NOT in 22.2
+GRANT SYSTEM  VIEWJOB                   TO dba; --                                                          NOT in 22.2
+GRANT SYSTEM  CONTROLJOB                TO dba; --                                                          NOT in 22.2
 ```
 
 
