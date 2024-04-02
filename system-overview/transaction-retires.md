@@ -1,9 +1,4 @@
-
- **< UNDER CONSTRUCTION >**
-
-
-
-# Technical Overview: Transaction Retires
+# Transactions: Retires
 
 
 
