@@ -32,53 +32,27 @@ In practice, CockroachDB operators will strive to automate most of the checks an
 
 ## Contents
 
-1. **[Service or System Overview](system-overview)**
-    * [Business Overview](system-overview/_under-construction_.md)
-        * [Functional System Overview](system-overview/_under-construction_.md)
-        * [Environments and Designations](system-overview/_under-construction_.md)
-        * [Service / System Owner](system-overview/_under-construction_.md)
-        * [Operations and Management Roles and Responsibilities](system-overview/_under-construction_.md)
-        * [Hours of Operation](system-overview/_under-construction_.md)
-        * [Peak Periods](system-overview/_under-construction_.md)
-        * [Cool (Quiet) Periods](system-overview/_under-construction_.md)
-        * [Impact of a System Failure](system-overview/_under-construction_.md)
-        * [Service Level Agreement (SLA)](system-overview/_under-construction_.md)
-        * [Operational Priorities](system-overview/_under-construction_.md)
-        * [Level 1 Support](system-overview/support-level-1.md)
-        * [Level 2 Support](system-overview/support-level-2.md)
-    * [Technical Overview](system-overview/_under-construction_.md)
-        * [Hardware Platform](system-overview/_under-construction_.md)
-        * [Virtualization or Containerization](system-overview/_under-construction_.md)
-        * [Operating system](system-overview/_under-construction_.md)
-        * [Clock Management](system-overview/_under-construction_.md)
-        * [Network Design](system-overview/_under-construction_.md)
-        * [Data Volumes](system-overview/_under-construction_.md)
-        * [Planned Capacity](system-overview/_under-construction_.md)
-        * [Cluster Right-Sizing, Expansion Strategy](system-overview/_under-construction_.md)
-        * [Cluster Topology and Configuration](system-overview/_under-construction_.md)
-        * [Auto-Scaling](system-overview/_under-construction_.md)
-        * [Connection Management (Pooling, Balancing, Failover/Failback](system-overview/connection-management.md))
-        * [Transactions: Implicit vs. Explicit](system-overview/transaction-implicit-explicit.md)
-        * [Transaction Retries](system-overview/transaction-retires.md)
-        * [Upstream Dependent Systems](system-overview/system-upstream.md)
-        * [Downstream Dependent Systems](system-overview/system-downstream.md)
-        * [Ecosystem Tools](system-overview/_under-construction_.md)
-        * [Deployment and Configuration management tools](system-overview/config-management-tools.md)
-1. **[Routine Maintenance Procedures](routine-maintenance/_under-construction_.md)**
-    * [Open / Close database &quot;gates&quot;](routine-maintenance/_under-construction_.md)
+1. **[The Most Common Problems experienced by CockroachDB users](most-common-problems/README.md)**
+1. **[System Overview](system-overview)**
+    * [Connection Management (Pooling, Balancing, Failover/Failback](system-overview/connection-management.md))
+    * [Transactions: Implicit vs. Explicit](system-overview/transaction-implicit-explicit.md)
+    * [Transaction Retries](system-overview/transaction-retires.md)
+    * [Data Availability](system-overview/data-availability.md)
+    * [Custom DBA Role](system-overview/role-dba.md)
+1. **[Routine Maintenance Procedures](routine-maintenance)**
+    * [Maintenance Procedure Pre-Check](routine-maintenance/maintenance-pre-check.md)
     * [Node Start](routine-maintenance/node-start.md)
     * [Node Shutdown (Stop)](routine-maintenance/node-stop.md)
     * [Add a Node](routine-maintenance/node-add.md)
     * [Remove (Decommission) Node ](routine-maintenance/node-remove.md)
-    * [Cluster Region Migration](routine-maintenance/cluster-region-migrate.md)
-    * [Server / VM Replacement](routine-maintenance/_under-construction_.md)
+    * [Change Cluster Settings](routine-maintenance/change-cluster-setting.md)
     * [Changefeed Management](routine-maintenance/changefeed-management.md)
-    * [Backup / Restore](routine-maintenance/backup-restore/README.md)
     * [Change --max-offset](routine-maintenance/change-max-offset.md)
     * [Change Rebalance Rate](routine-maintenance/change-rebalance-rate.md)
-    * [Change Cluster Settings](routine-maintenance/change-cluster-setting.md)
+    * [Cluster Region Migration](routine-maintenance/cluster-region-migrate.md)
+    * [Close "Database Gates"](routine-maintenance/connections-close.md)
+    * [Backup / Restore](routine-maintenance/backup-restore/README.md)
     * [CockroachDB Version Upgrade](routine-maintenance/release-upgrade.md)
-1. **[The Most Common Problems experienced by CockroachDB users](most-common-problems/README.md)**
 1. **[Monitoring and Alerting](monitoring-alerts)**
     * Monitoring tools
         * [Custom Dashboard (100 Essential Metrics to Monitor in Grafana, Datadog)](monitoring-alerts/monitoring-dashboard-custom.md)
@@ -94,18 +68,13 @@ In practice, CockroachDB operators will strive to automate most of the checks an
         * [Version Mismatch](monitoring-alerts/alert-version-mismatch.md)
         * [Expirations](monitoring-alerts/alert-expirations.md)
 1. **[Diagnostic and Support](diagnostic-support)**
-    * [L1 Support (In-House)](diagnostic-support/support-l1.md)
-    * [L2 Support (Escalation to Cockroach Labs)](support-l2.md)
     * [Troubleshooting SQL Workload Contention](diagnostic-support/troubleshooting-sql-contention.md)
     * [Troubleshooting Hardware Resource Contention](diagnostic-support/troubleshooting-hardware-contention.md)
 1. **[Emergency Procedures / Operation Continuity](emergency-procedures/_under-construction_.md)**
     * [Node Replace](emergency-procedures/node-replace.md)
     * [Node Wipe](emergency-procedures/node-wipe.md)
-    * [Node LSM compaction](emergency-procedures/lsm-compact.md)
+    * [Node LSM Compaction](emergency-procedures/lsm-compact.md)
     * [CockroachDB server/VM replacement](emergency-procedures/server-vm-replacement.md)
-    * [Disaster Recovery: Database Restore](emergency-procedures/_under-construction_.md)
-    * [Recovery from a Quorum Loss](emergency-procedures/_under-construction_.md)
-    * [Recovery from logical data corruption](emergency-procedures/corruption-logical.md)
 
 
 
