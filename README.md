@@ -77,12 +77,3 @@ In practice, CockroachDB operators will strive to automate most of the checks an
     * [CockroachDB server/VM replacement](emergency-procedures/server-vm-replacement.md)
 
 
-
----
-
-## Useful Resources and Examples
-
-- Monitoring Alerts deployed [Cockroach Cloud managed Service](https://github.com/cockroachlabs/managed-service/tree/master/pkg/monitoring/prometheus/assets):  ([common](https://github.com/cockroachlabs/managed-service/tree/master/pkg/monitoring/prometheus/assets/common), [dedicated](https://github.com/cockroachlabs/managed-service/tree/master/pkg/monitoring/prometheus/assets/dedicated), [host](https://github.com/cockroachlabs/managed-service/tree/master/pkg/monitoring/prometheus/assets/host))
-- Including the 6 [alerts delivered to users](https://github.com/cockroachlabs/managed-service/blob/master/pkg/monitoring/prometheus/assets/dedicated/alerts.cockroach-customer.yml) of Cockroach Cloud Dedicated
-- Available [Monitoring Metrics](https://www.cockroachlabs.com/docs/v21.1/ui-custom-chart-debug-page.html#available-metrics) 
-
