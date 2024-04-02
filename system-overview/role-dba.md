@@ -73,7 +73,6 @@ Customize as it suits Organization's IT practices.
 ```sql
 -- Authorize DBAs with grants of system (cluster) level privileges to the DBA group.
 
-GRANT SYSTEM  VIEWCLUSTERSETTING        TO dba;   -- e.g. show cluster settings;
 GRANT SYSTEM  VIEWSYSTEMTABLE           TO dba;   -- e.g. select * from system.settings;                      NOT IN 22.2
 GRANT SYSTEM  VIEWCLUSTERMETADATA       TO dba;   -- e.g. select * from crdb_internal.kv_node_status;
 GRANT SYSTEM  VIEWACTIVITY              TO dba;   -- e.g. select * from crdb_internal.cluster_locks;
