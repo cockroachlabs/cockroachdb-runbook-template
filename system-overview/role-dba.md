@@ -65,9 +65,10 @@ REVOKE dba FROM dba_staff_mickey;
 
 -------------
 
-The required privilege grant are grouped by common DBA tasks. Apply as it suits Organization's IT practices.
+The required privilege grant are grouped by common DBA tasks. The same privilege may appear in different task groups. A privilege can be granted repeatedly. 
+Customize as it suits Organization's IT practices.
 
-#### Authorize DBA to View Cluster Settings and System Tables Content
+#### Authorize DBA to View System Tables and Current Settings
 
 ```sql
 -- Authorize DBAs with grants of system (cluster) level privileges to the DBA group.
@@ -87,7 +88,7 @@ GRANT SYSTEM  VIEWACTIVITYREDACTED      TO dba;   -- e.g. select * from crdb_int
 
 
 
-#### Authorize DBA to view and modify cluster settings
+#### Authorize DBA to View and Modify Cluster Settings
 
 ```sql
 GRANT SYSTEM  VIEWCLUSTERSETTING        TO dba; -- e.g. SHOW CLUSTER SETTINGS
@@ -130,7 +131,7 @@ GRANT SYSTEM  CONTROLJOB                TO dba; --                              
 
 
 
-#### Authorize DBA to view and operate on cluster metadata
+#### Authorize DBA to View and Operate on Cluster Metadata
 
 ```sql
 GRANT SYSTEM  VIEWCLUSTERMETADATA       TO dba; -- view range, distribution, store, Raft information 
@@ -139,7 +140,7 @@ GRANT SYSTEM  REPAIRCLUSTERMETADATA     TO dba; -- e.g. ALTER RANGE             
 
 
 
-#### Authorize DBA to manage non-admin roles (users)
+#### Authorize DBA to Manage non-admin Roles (users)
 
 ```sql
 GRANT SYSTEM  CREATEROLE                TO dba; -- auth to manage role (user) lifecycle                     NOT in 22.2
