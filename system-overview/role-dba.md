@@ -1,10 +1,12 @@
+< WORK IN PROGRESS >
+
 # Role: Database Administrator (via system privileges)
 
 ### Overview
 
 Organizations may set forth IT security practices that don't allow unrestricted administrative access to databases using an [*admin* role](https://www.cockroachlabs.com/docs/stable/security-reference/authorization#admin-role). In that case, routine Database Administration (DBA) functions need to be delegated to a custom designed [*public* role](https://www.cockroachlabs.com/docs/stable/security-reference/authorization#public-role), with system- or object- level privileges granted to authorize DBA actions.
 
-This article provides a list of the minimally required privileges, grouped by common DBA tasks. An operator can lean on guidance in this article to design the custom authorization model per Organization's requirements and regulations.
+This article provides a list of the minimally required privileges, grouped by common DBA tasks. An operator can lean on guidance in this article to design a custom authorization model per Organization's requirements and regulations.
 
 
 
@@ -68,7 +70,7 @@ REVOKE dba FROM dba_staff_mickey;
 The required privilege grant are grouped by common DBA tasks. The same privilege may appear in different task groups. A privilege can be granted repeatedly. 
 Customize as it suits Organization's IT practices.
 
-#### Authorize DBA to View System Tables and Current Settings
+#### Authorize DBA to View System / Metadata Tables and Current Settings
 
 ```sql
 -- Authorize DBAs with grants of system (cluster) level privileges to the DBA group.
@@ -87,6 +89,15 @@ GRANT SYSTEM  VIEWACTIVITYREDACTED      TO dba;   -- e.g. select * from crdb_int
 
 
 
+#### Authorize DBA to View and Operate on Cluster Metadata
+
+```sql
+GRANT SYSTEM  VIEWCLUSTERMETADATA       TO dba; -- view range, distribution, store, Raft information 
+GRANT SYSTEM  REPAIRCLUSTERMETADATA     TO dba; -- e.g. ALTER RANGE                                         NOT in 22.2
+```
+
+
+
 #### Authorize DBA to View and Modify Cluster Settings
 
 ```sql
@@ -94,11 +105,35 @@ GRANT SYSTEM  VIEWCLUSTERSETTING        TO dba; -- e.g. SHOW CLUSTER SETTINGS
 GRANT SYSTEM  MODIFYCLUSTERSETTING      TO dba; -- e.g. SET CLUSTER SETTING ...
 ```
 
-Note: a more restrictive is available in place of `MODIFYCLUSTERSETTING` (limited to settings prefixed with sql.*):
+Note: A more restrictive is available in place of `MODIFYCLUSTERSETTING` (limited to settings prefixed with sql.*):
 
 ```sql
 GRANT SYSTEM  MODIFYSQLCLUSTERSETTING   TO dba; -- e.g. SET CLUSTER SETTING sql...                          NOT IN 22.2
 ```
+
+
+
+#### Authorize DBA to Create Databases
+
+```sql
+GRANT SYSTEM  CREATEDB                  TO dba; -- e.g. CREATE DATABASE ...;
+```
+
+
+
+#### Authorize DBA to Manage non-admin Roles (users)
+
+```sql
+GRANT SYSTEM  CREATEROLE                TO dba; -- auth to manage role (user) lifecycle                     NOT in 22.2
+GRANT SYSTEM  CREATELOGIN               TO dba; -- auth to manage usr's pwd policies and ability to connect NOT in 22.2
+-- GRANT SYSTEM  NOSQLLOGIN                TO dba; -- auth to prevent a user from connecting to cluster
+```
+
+Note:  For completeness, the authorized user management actions by DBA may need to include an ability to [temporarily] disable user SQL access. For example, to execute "close database gates", or while making disruptive schema changes in a development environment in controlled/graceful manner.
+
+The privilege controlling user's ability to connect is `NOSQLLOGIN`. This privilege is unique in being a "negative" privilege. Therefore enabling a non-admin DBA role to be able to grant `NOSQLLOGIN` to other roles (like an application user) is not possible, because `GRANT SYSTEM NOSQLLOGIN TO dba WITH GRANT OPTION;` will harm DBA's own ability to connect.
+
+This means that *only a cluster admin role* (like `root`) *can disable other user's ability to connect* with `GRANT SYSTEM  NOSQLLOGIN TO app_rw_oltp;` 
 
 
 
@@ -130,21 +165,13 @@ GRANT SYSTEM  CONTROLJOB                TO dba; --                              
 
 
 
-#### Authorize DBA to View and Operate on Cluster Metadata
+#### Authorize DBA to Create and Manage Changefeeds
 
 ```sql
-GRANT SYSTEM  VIEWCLUSTERMETADATA       TO dba; -- view range, distribution, store, Raft information 
-GRANT SYSTEM  REPAIRCLUSTERMETADATA     TO dba; -- e.g. ALTER RANGE                                         NOT in 22.2
-```
-
-
-
-#### Authorize DBA to Manage non-admin Roles (users)
-
-```sql
-GRANT SYSTEM  CREATEROLE                TO dba; -- auth to manage role (user) lifecycle                     NOT in 22.2
-GRANT SYSTEM  CREATELOGIN               TO dba; -- auth to manage usr's pwd policies and ability to connect NOT in 22.2
-GRANT SYSTEM  NOSQLLOGIN                TO dba; -- auth to prevent a user from connecting to cluster
+GRANT SYSTEM  VIEWJOB                   TO dba; --                                                          NOT in 22.2
+GRANT SYSTEM  CONTROLJOB                TO dba; --                                                          NOT in 22.2
+GRANT SYSTEM  CHANGEFEED                TO dba;
+GRANT SYSTEM  EXTERNALCONNECTION        TO dba;
 ```
 
 
