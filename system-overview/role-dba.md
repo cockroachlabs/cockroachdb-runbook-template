@@ -1,6 +1,6 @@
 < WORK IN PROGRESS >
 
-# Role: Database Administrator (via system privileges)
+# Role: Database Administrator (system privileges package)
 
 ### Overview
 
@@ -32,7 +32,7 @@ A `DBA` group (role) may be created to centralize management of privileges grant
 
 
 
-The following must be executed as an admin user (role):
+All instructions in this section must be executed as an **admin user** (role).
 
 ```sql
 ------------------------------------
@@ -70,7 +70,11 @@ REVOKE dba FROM dba_staff_mickey;
 The required privilege grant are grouped by common DBA tasks. The same privilege may appear in different task groups. A privilege can be granted repeatedly. 
 Customize as it suits Organization's IT practices.
 
-#### Authorize DBA to View System / Metadata Tables and Current Settings
+All instructions in this section must be executed as an **admin user** (role).
+
+
+
+#### Authorize DBA to View System / Metadata Tables
 
 ```sql
 -- Authorize DBAs with grants of system (cluster) level privileges to the DBA group.
@@ -126,14 +130,17 @@ GRANT SYSTEM  CREATEDB                  TO dba; -- e.g. CREATE DATABASE ...;
 ```sql
 GRANT SYSTEM  CREATEROLE                TO dba; -- auth to manage role (user) lifecycle                     NOT in 22.2
 GRANT SYSTEM  CREATELOGIN               TO dba; -- auth to manage usr's pwd policies and ability to connect NOT in 22.2
--- GRANT SYSTEM  NOSQLLOGIN                TO dba; -- auth to prevent a user from connecting to cluster
 ```
 
 Note:  For completeness, the authorized user management actions by DBA may need to include an ability to [temporarily] disable user SQL access. For example, to execute "close database gates", or while making disruptive schema changes in a development environment in controlled/graceful manner.
 
 The privilege controlling user's ability to connect is `NOSQLLOGIN`. This privilege is unique in being a "negative" privilege. Therefore enabling a non-admin DBA role to be able to grant `NOSQLLOGIN` to other roles (like an application user) is not possible, because `GRANT SYSTEM NOSQLLOGIN TO dba WITH GRANT OPTION;` will harm DBA's own ability to connect.
 
-This means that *only a cluster admin role* (like `root`) *can disable other user's ability to connect* with `GRANT SYSTEM  NOSQLLOGIN TO app_rw_oltp;` 
+This means that *only a cluster admin role* (like `root`) *can disable other user's ability to connect* with
+
+```sql
+GRANT SYSTEM  NOSQLLOGIN TO app_or_interactive_user_role;
+```
 
 
 
@@ -178,9 +185,57 @@ GRANT SYSTEM  EXTERNALCONNECTION        TO dba;
 
 
 
+### Tightening Permissive Built-In Authorizations of All Non-Admin (Public) Roles
+
+----------
+
+##### `public` role
+
+CockroachDB follows the PostgreSQL authorization model which includes a [built-in public role](https://www.cockroachlabs.com/docs/stable/security-reference/authorization#public-role), effectively a group. All non-admin roles (users) inherit group privileges from the `public` role. These privileges are intrinsically granted to the built-in `public` and may be overlooked by administrators in charge of designing the authorization scheme for a cluster deployment. The implicit `public` privileges inherited by each non-admin role are reported only with
+
+```sql
+SHOW GRANTS FOR public;
+```
+
+Note that the inherited privileges are not shown with the ` SHOW GRANTS ... `  command for any "regular" role.
+
+A specific concern may be with the `CONNECT` privilege inherited by every role, as can be confirmed with  `SELECT * FROM [SHOW GRANTS FOR public] WHERE privilege_type = 'CONNECT'`.  While the `CONNECT` privilege does not control SQL connections to a database, it [grants the ability to view database's metadata](https://www.cockroachlabs.com/docs/v23.2/security-reference/authorization#supported-privileges) and applies to all databases in the cluster.
+
+An operator may elect to revoke the built-in `CONNECT` privilege from `public` in all databases, including built-in (`postgres`, `defaultdb`) and all databases created by DBAs. See a complete example at the bottom of this section.
+
+##### `public` schema
+
+Also following a PostgreSQL model, all CockroachDB databases have a default schema called `public`, accommodated by the default search path.
+
+The `public` schema is open to all roles (users) for DDL and DML statements. All cluster users, can create tables, read and write records in the `public` schema without any explicitly granted privileges in that database.  
+
+An operator may elect to revoke all privileges on `public` schema from `public` role, in all existing databases, including built-in (`postgres`, `defaultdb`) and all databases subsequently created by DBAs.
+
+
+
+The example below limits the metadata and data access in a cluster by removing implicit `public` role privileges and permissive `public` built-in schemas in built-in databases `postgres` and `defaultdb`. Execute as an **admin user** (role):
+
+```sql
+REVOKE CONNECT ON DATABASE postgres FROM public;
+REVOKE ALL ON SCHEMA postgres.public FROM public;
+
+REVOKE CONNECT ON DATABASE defaultdb FROM public;
+REVOKE ALL ON SCHEMA defaultdb.public FROM public;
+```
+
+Repeat the same 2 `REVOKE` statements for each new database created in the cluster.  
+
+
+
+
+
 ### Authorization of Data Management Actions
 
 ----------
 
-< UNDER DEVELOPMENT >
+All instructions in this section must be executed as a custom defined role that belongs to **dba role** (group). For example, role (user) `dba_staff_minnie` defined earlier in this article.
+
+
+
+< WORK IN PROGRESS >
 
