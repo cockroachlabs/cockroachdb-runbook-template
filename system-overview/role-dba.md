@@ -24,6 +24,10 @@ This article provides a list of the minimally required privileges, grouped by co
 
 
 
+
+
+------
+
 ### DBA Group and Individual Roles
 
 A `DBA` group (role) may be created to centralize management of privileges granted to all DBAs. With interactive users (roles) inheriting authorizations via the DBA group membership.
@@ -63,9 +67,11 @@ REVOKE dba FROM dba_staff_mickey;
 
 
 
-### Authorization of Administrative Actions
+
 
 -------------
+
+### Authorization of Administrative Actions
 
 The required privilege grant are grouped by common DBA tasks. The same privilege may appear in different task groups. A privilege can be granted repeatedly. 
 Customize as it suits Organization's IT practices.
@@ -185,9 +191,9 @@ GRANT SYSTEM  EXTERNALCONNECTION        TO dba;
 
 
 
-### Tightening Permissive Built-In Authorizations of All Non-Admin (Public) Roles
+------
 
-----------
+### Tightening Permissive Built-In Authorizations of All Non-Admin (Public) Roles
 
 ##### `public` role
 
@@ -229,9 +235,9 @@ Repeat the same 2 `REVOKE` statements for each new database created in the clust
 
 
 
-### Authorization of Data Management Actions
+------
 
-----------
+### Authorization of Data Management Actions
 
 All instructions in this section must be executed as a custom defined role that belongs to **dba role** (group). For example, role (user) `dba_staff_minnie` defined earlier in this article.
 
