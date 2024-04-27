@@ -1,10 +1,12 @@
-# Role: Database Administrator - Authorization Blueprint
+# Role: Database Administrator
 
 ### Overview
 
 Organizations may set forth IT security practices that don't allow unrestricted administrative access to databases using an [*admin* role](https://www.cockroachlabs.com/docs/stable/security-reference/authorization#admin-role). In that case, routine Database Administration (DBA) functions need to be delegated to a custom designed [*public* role](https://www.cockroachlabs.com/docs/stable/security-reference/authorization#public-role), with system- or object- level privileges granted to authorize DBA actions.
 
 This article provides a list of the minimally required privileges, grouped by common DBA tasks. An operator can lean on guidance in this article to design a custom authorization model per Organization's requirements and regulations.
+
+The two articles - [Role: Application](../system-overview/role-app.md) and [Role: Application](../system-overview/role-app.md) - are providing blueprint elements to aid implementations of custom authorization models that limit the use of `admin` superusers.
 
 
 
