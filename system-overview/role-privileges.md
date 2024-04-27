@@ -41,7 +41,7 @@ SELECT has_database_privilege('dba', 'postgres', 'CONNECT');
 
 The following query reports all granted privileges to a **public** role via all privilege granting mechanisms. In particular, it explicitly includes the implied inheritance from the intrinsic parent role ("group") `public`.
 
-For example, for a role `dba_staff_minnie`, (following the example in the article [Role: Database Administrator](../system-overview/role-dba.md#tightening-permissive-built-in-authorizations-of-all-non-admin-public-roles)) use:
+For example, for a role `dba_staff_minnie`, (following the example in the article [Role: Database Administrator](../system-overview/role-dba.md)) use:
 
 ```sql
 WITH RECURSIVE traverse_inheritance (role_name) AS (
@@ -96,4 +96,16 @@ SELECT grantee, privilege_type, 'SYSTEM PRIVILEGE', '', '' FROM [SHOW SYSTEM GRA
 ORDER BY grantee;
 
 ```
+
+
+
+
+
+------
+
+###### Related Articles:
+
+###### 	 [Role: Database Administrator](../system-overview/role-dba.md#tightening-permissive-built-in-authorizations-of-all-non-admin-public-roles)
+
+###### 	 [Role: Application](../system-overview/role-app.md)
 

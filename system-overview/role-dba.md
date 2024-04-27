@@ -1,6 +1,4 @@
-< WORK IN PROGRESS >
-
-# Role: Database Administrator (system privileges package)
+# Role: Database Administrator - Authorization Blueprint
 
 ### Overview
 
@@ -178,12 +176,9 @@ GRANT SYSTEM  CONTROLJOB                TO dba; --                              
 
 
 
-#### Authorize DBA to Create and Manage Changefeeds
+#### Authorize DBA to Create and Manage External Changefeed Connections
 
 ```sql
-GRANT SYSTEM  VIEWJOB                   TO dba; --                                                          NOT in 22.2
-GRANT SYSTEM  CONTROLJOB                TO dba; --                                                          NOT in 22.2
-GRANT SYSTEM  CHANGEFEED                TO dba;
 GRANT SYSTEM  EXTERNALCONNECTION        TO dba;
 ```
 
@@ -203,7 +198,7 @@ CockroachDB follows the PostgreSQL authorization model which includes a [built-i
 SHOW GRANTS FOR public;
 ```
 
-Note that the inherited privileges are not shown with the ` SHOW GRANTS ... `  command for any "regular" role.
+Note that the inherited privileges are not shown with the ` SHOW GRANTS ... `  command for any "regular" (non-admin) role.
 
 A specific concern may be with the `CONNECT` privilege inherited by every role, as can be confirmed with  `SELECT * FROM [SHOW GRANTS FOR public] WHERE privilege_type = 'CONNECT'`.  While the `CONNECT` privilege does not control SQL connections to a database, it [grants the ability to view database's metadata](https://www.cockroachlabs.com/docs/v23.2/security-reference/authorization#supported-privileges) and applies to all databases in the cluster.
 
@@ -229,7 +224,7 @@ REVOKE CONNECT ON DATABASE defaultdb FROM public;
 REVOKE ALL ON SCHEMA defaultdb.public FROM public;
 ```
 
-Repeat the same 2 `REVOKE` statements for each new database created in the cluster.  
+> ✅ Repeat the same 2 `REVOKE` statements for each new database created in the cluster.  
 
 
 
@@ -237,11 +232,9 @@ Repeat the same 2 `REVOKE` statements for each new database created in the clust
 
 ------
 
-### Authorization of Data Management Actions
+###### Related Articles:
 
-All instructions in this section must be executed as a custom defined role that belongs to **dba role** (group). For example, role (user) `dba_staff_minnie` defined earlier in this article.
+###### 	 [Role: Application](../system-overview/role-app.md)
 
-
-
-< WORK IN PROGRESS >
+###### 	[Role: Checking and Reporting Authorizations](../system-overview/role-privileges.md)
 
