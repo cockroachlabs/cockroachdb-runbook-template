@@ -6,21 +6,20 @@ Organizations may set forth IT security practices that don't allow unrestricted 
 
 This article provides a list of the minimally required privileges, grouped by common DBA tasks. An operator can lean on guidance in this article to design a custom authorization model per Organization's requirements and regulations.
 
-The two articles - [Role: Application](../system-overview/role-app.md) and [Role: Application](../system-overview/role-app.md) - are providing blueprint elements to aid implementations of custom authorization models that limit the use of `admin` superusers.
+The two articles - [Role: Application](../system-overview/role-app.md) and [Role: Application](../system-overview/role-app.md) - are providing blueprint elements to aid implementations of custom authorization models that limit the use of `admin` superusers after DBA users are authorized in the cluster.
 
 
 
 ### Minimally Required CockroachDB Release
 
-> ✅ The guidance in this article applies to **CockroachDB release 23.1 or later**. It has been tested with v23.1.17. 
+> ✅ The guidance in this article applies to **CockroachDB release 23.1 or later**. It has been tested with v23.1.17.
 >
 > The [privilege-](https://www.cockroachlabs.com/docs/stable/security-reference/authorization#privileges) based authentication model was introduced in CockroachDB v22.2 and has been continually improving. The granularity and completeness of the system of privileges emancipated to a production deployment grade authorization model in v23.1. 
 
 
 
 > ✅ There are no plans to back port privileges introduced in v23.1 to v22.2.
->
-> v23.1 privileges not available in v22.2 are marked in the instructions below for operator's awareness.
+>v23.1 privileges not available in v22.2 are marked in the instructions below, for operator's awareness.
 
 
 
@@ -30,9 +29,15 @@ The two articles - [Role: Application](../system-overview/role-app.md) and [Role
 
 ### DBA Group and Individual Roles
 
-A `DBA` group (role) may be created to centralize management of privileges granted to all DBAs. With interactive users (roles) inheriting authorizations via the DBA group membership.
+This non-admin authorization implementation blueprint proposes 2 role profiles:
 
-> ✅ This article is dedicated to DBA authorization; all authentication provisions are omitted to eliminate clutter.
+-  A `DBA` group (role) is created as a "container" of privileges to centralize management of privileges granted to all staff DBA users in the cluster. It simplifies management and ensures consistency of privilege grants to staff DBA users. The `DBA` role is non-interactive, may not be used to create a database session.
+- Staff DBA users are identified by interactive roles that inherit authorizations via the DBA group membership.
+
+
+
+> ✅ Note: The topic of *authentication* is entirely outside the scope of this article.
+> This article is dedicated to DBA authorization. Therefore all authentication provisions are omitted to eliminate clutter.
 
 
 
@@ -73,7 +78,7 @@ REVOKE dba FROM dba_staff_mickey;
 
 ### Authorization of Administrative Actions
 
-The required privilege grant are grouped by common DBA tasks. The same privilege may appear in different task groups. A privilege can be granted repeatedly. 
+The required privileges grants are grouped by common DBA tasks. The same privilege may appear in different task groups. A privilege can be granted repeatedly. 
 Customize as it suits Organization's IT practices.
 
 All instructions in this section must be executed as an **admin user** (role).
