@@ -105,7 +105,7 @@ ORDER BY grantee;
 
 ###### Related Articles:
 
-###### 	 [Role: Database Administrator](../system-overview/role-dba.md#tightening-permissive-built-in-authorizations-of-all-non-admin-public-roles)
+###### 	 [Role: Database Administrator](../system-overview/role-dba.md)
 
 ###### 	 [Role: Application](../system-overview/role-app.md)
 
