@@ -39,6 +39,7 @@ CREATE USER app_ro_report WITH LOGIN;
 
 -- OLTP application, with read and write privileges
 CREATE USER app_rw_oltp WITH LOGIN;
+
 ```
 
 The new application roles do not have access to business data in the cluster until explicitly authorized. However they have privileges inherited from `public` group (role), as explained in [Role: Checking and Reporting Authorizations](../system-overview/role-privileges.md#nuanced-points-about-roles-and-privileges).
@@ -93,6 +94,7 @@ REVOKE CONNECT ON DATABASE ods FROM public;
 -- as a temporary workaround until this defect is fixed
 -- (https://github.com/cockroachdb/cockroach/issues/121808)
 REVOKE ALL ON SCHEMA ods.public FROM public;
+
 ```
 
 
@@ -103,9 +105,10 @@ REVOKE ALL ON SCHEMA ods.public FROM public;
 
 ### Create Application Schema
 
-< work in progress >
+A common DBA practice is to maintain tables used by an application or an application component in a named schema. In this example a DBA persona `dba_staff_minnie`  creates and sets up a schema `reporting`, with consistent ownership and helpful search_path:
 
 ```sql
+
 -- Ensure the current database is set
 USE ods;
 
@@ -114,11 +117,11 @@ USE ods;
 CREATE SCHEMA IF NOT EXISTS ods.reporting AUTHORIZATION dba;
 ALTER SCHEMA ods.reporting OWNER TO dba;  -- make the non-interactive DBA group (role) the owner!
 
-
--- ISSUE: Non-admin can't set search path per database. This could be helpful but requires admin:
+-- Set the search path to schema 'reporting'.
+-- Note: Non-admin can't set search path per database. This would've been helpful but requires admin:
 -- ALTER DATABASE  ods SET search_path = reporting;
--- So working around it:
--- (takes effect on new connections)
+-- (https://github.com/cockroachdb/cockroach/issues/123287)
+-- To work around (takes effect on new connections):
 ALTER USER  app_ro_report    SET SEARCH_PATH TO reporting;
 ALTER USER  app_rw_oltp      SET SEARCH_PATH TO reporting;
 ALTER USER  dba_staff_mickey SET SEARCH_PATH TO reporting;
@@ -128,11 +131,11 @@ ALTER USER  dba_staff_minnie SET SEARCH_PATH TO reporting;
 SET SEARCH_PATH TO reporting;
 
 
--- Create ODS schema (non-realistic yet sufficient 1 table example)
+-- Create ODS schema (non-realistic yet sufficient 1 table / 1 sequence example)
 CREATE TABLE reporting.account (id INT NOT NULL PRIMARY KEY, balance INT NOT NULL);
 ALTER  TABLE reporting.account OWNER TO dba;
 
-CREATE SEQUENCE ordinal CACHE 10;
+CREATE SEQUENCE reporting.ordinal CACHE 10;
 ALTER  SEQUENCE reporting.ordinal OWNER TO dba;
 
 ```
