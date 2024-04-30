@@ -29,10 +29,20 @@ CockroachDB operators should be aware of the following insights:
 
 ### Checking the Effective Role Authorization
 
-To check if a privilege is granted to a role in a database, use the `has_database_privilege()` [built-in function](https://www.cockroachlabs.com/docs/stable/functions-and-operators.html#compatibility-functions). For example, to check if a user `dba` has `CONNECT` privilege to database `postgres`, use:
+To check if a privilege is granted to a role in a database, use the `has_database_privilege()` [built-in function](https://www.cockroachlabs.com/docs/stable/functions-and-operators.html#compatibility-functions). For example, to check if the current user has `CONNECT` privilege to database `postgres`, use:
 
 ```sql
+SELECT has_database_privilege(current_user, 'postgres', 'CONNECT');
+-- or for non-current user 'dba'
 SELECT has_database_privilege('dba', 'postgres', 'CONNECT');
+```
+
+To check if a privilege is granted to a role in a schema, use the `has_database_privilege()` [built-in function](https://www.cockroachlabs.com/docs/stable/functions-and-operators.html#compatibility-functions). For example, to check if the current user has `CREATE` privilege in the schema `public`, use:
+
+```sql
+SELECT has_schema_privilege(current_user, 'public', 'CREATE');
+-- or for non-current user 'dba'
+SELECT has_schema_privilege('dba', 'public', 'CREATE');
 ```
 
 
@@ -41,11 +51,11 @@ SELECT has_database_privilege('dba', 'postgres', 'CONNECT');
 
 The following query reports all granted privileges to a **public** role via all privilege granting mechanisms. In particular, it explicitly includes the implied inheritance from the intrinsic parent role ("group") `public`.
 
-For example, for a role `dba_staff_minnie`, (following the example in the article [Role: Database Administrator](../system-overview/role-dba.md)) use:
+For example, for the current (public!) user, use:
 
 ```sql
 WITH RECURSIVE traverse_inheritance (role_name) AS (
-  (SELECT 'dba_staff_minnie' as role_name
+  (SELECT current_user as role_name
    -- all non-admin roles are "public", however role (group) "public" is not reported by inheritance query
    -- so adding 'public' to surface all inherited privileges from the implicit public role group membership
    UNION ALL

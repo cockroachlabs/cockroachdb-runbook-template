@@ -1,4 +1,4 @@
-# Role: Database Administrator
+# Role: DBA Role Setup and Authorization
 
 ### Overview
 
@@ -6,7 +6,9 @@ Organizations may set forth IT security practices that don't allow unrestricted 
 
 This article provides a list of the minimally required privileges, grouped by common DBA tasks. An operator can lean on guidance in this article to design a custom authorization model per Organization's requirements and regulations.
 
-The two articles - [Role: Application](../system-overview/role-app.md) and [Role: Application](../system-overview/role-app.md) - are providing blueprint elements to aid implementations of custom authorization models that limit the use of `admin` superusers after DBA users are authorized in the cluster.
+The two articles - [Role: DBA](../system-overview/role-dba.md) and [Role: App](../system-overview/role-app.md) - are providing blueprint elements to aid implementations of custom authorization models that limit the use of `admin` superusers after DBA users are authorized in the cluster.
+
+Instructions in this article are executed by a cluster **admin role** (root).
 
 
 
@@ -44,9 +46,9 @@ This non-admin authorization implementation blueprint proposes 2 role profiles:
 All instructions in this section must be executed as an **admin user** (role).
 
 ```sql
-------------------------------------
--- Connect as root (admin) persona !
-------------------------------------
+-----------------------------------+
+-- Connect as root (admin) persona |
+-----------------------------------+
 
 -- Create a "database administrator" group (role),
 -- to serve as the central place for DBA authorizations.
@@ -90,7 +92,7 @@ All instructions in this section must be executed as an **admin user** (role).
 ```sql
 -- Authorize DBAs with grants of system (cluster) level privileges to the DBA group.
 
-GRANT SYSTEM  VIEWSYSTEMTABLE           TO dba;   -- e.g. select * from system.settings;                      NOT IN 22.2
+GRANT SYSTEM  VIEWSYSTEMTABLE           TO dba;   -- e.g. select * from system.settings;        NOT IN 22.2
 GRANT SYSTEM  VIEWCLUSTERMETADATA       TO dba;   -- e.g. select * from crdb_internal.kv_node_status;
 GRANT SYSTEM  VIEWACTIVITY              TO dba;   -- e.g. select * from crdb_internal.cluster_locks;
 ```
@@ -108,7 +110,7 @@ GRANT SYSTEM  VIEWACTIVITYREDACTED      TO dba;   -- e.g. select * from crdb_int
 
 ```sql
 GRANT SYSTEM  VIEWCLUSTERMETADATA       TO dba; -- view range, distribution, store, Raft information 
-GRANT SYSTEM  REPAIRCLUSTERMETADATA     TO dba; -- e.g. ALTER RANGE                                         NOT in 22.2
+GRANT SYSTEM  REPAIRCLUSTERMETADATA     TO dba; -- e.g. ALTER RANGE                             NOT IN 22.2
 ```
 
 
@@ -123,7 +125,7 @@ GRANT SYSTEM  MODIFYCLUSTERSETTING      TO dba; -- e.g. SET CLUSTER SETTING ...
 Note: A more restrictive is available in place of `MODIFYCLUSTERSETTING` (limited to settings prefixed with sql.*):
 
 ```sql
-GRANT SYSTEM  MODIFYSQLCLUSTERSETTING   TO dba; -- e.g. SET CLUSTER SETTING sql...                          NOT IN 22.2
+GRANT SYSTEM  MODIFYSQLCLUSTERSETTING   TO dba; -- e.g. SET CLUSTER SETTING sql...              NOT IN 22.2
 ```
 
 
@@ -139,8 +141,8 @@ GRANT SYSTEM  CREATEDB                  TO dba; -- e.g. CREATE DATABASE ...;
 #### Authorize DBA to Manage non-admin Roles (users)
 
 ```sql
-GRANT SYSTEM  CREATEROLE                TO dba; -- auth to manage role (user) lifecycle                     NOT in 22.2
-GRANT SYSTEM  CREATELOGIN               TO dba; -- auth to manage usr's pwd policies and ability to connect NOT in 22.2
+GRANT SYSTEM  CREATEROLE                TO dba; -- auth to manage role (user) lifecycle         NOT IN 22.2
+GRANT SYSTEM  CREATELOGIN               TO dba; -- auth to manage usr's pwd policies and login  NOT in 22.2
 ```
 
 Note:  For completeness, the authorized user management actions by DBA may need to include an ability to [temporarily] disable user SQL access. For example, to execute "close database gates", or while making disruptive schema changes in a development environment in controlled/graceful manner.
@@ -160,7 +162,7 @@ GRANT SYSTEM  NOSQLLOGIN TO app_or_interactive_user_role;
 ```sql
 GRANT SYSTEM  VIEWCLUSTERSETTING        TO dba; -- e.g. explain analyze (debug) <select statement>
 GRANT SYSTEM  VIEWDEBUG                 TO dba; -- e.g. explain analyze (debug) <select statement>
-GRANT SYSTEM  VIEWSYSTEMTABLE           TO dba; -- e.g. \statement-diag download 954984026515832833         NOT IN 22.2
+GRANT SYSTEM  VIEWSYSTEMTABLE           TO dba; -- e.g. \statement-diag download                NOT IN 22.2
 ```
 
 
@@ -177,8 +179,8 @@ GRANT SYSTEM  CANCELQUERY               TO dba; -- enable CANCEL SESSION / CANCE
 #### Authorize DBA to View and Control Cluster JOBs
 
 ```sql
-GRANT SYSTEM  VIEWJOB                   TO dba; --                                                          NOT in 22.2
-GRANT SYSTEM  CONTROLJOB                TO dba; --                                                          NOT in 22.2
+GRANT SYSTEM  VIEWJOB                   TO dba; --                                              NOT IN 22.2
+GRANT SYSTEM  CONTROLJOB                TO dba; --                                              NOT IN 22.2
 ```
 
 
@@ -241,7 +243,7 @@ REVOKE ALL ON SCHEMA defaultdb.public FROM public;
 
 ###### Related Articles:
 
-###### 	 [Role: Application](../system-overview/role-app.md)
+###### 	 [Role: Role: App Role Setup and Authorization](../system-overview/role-app.md)
 
 ###### 	[Role: Checking and Reporting Authorizations](../system-overview/role-privileges.md)
 
