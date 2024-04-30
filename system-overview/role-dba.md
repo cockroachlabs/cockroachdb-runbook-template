@@ -243,7 +243,7 @@ REVOKE ALL ON SCHEMA defaultdb.public FROM public;
 
 ###### Related Articles:
 
-###### 	 [Role: Role: App Role Setup and Authorization](../system-overview/role-app.md)
+###### 	 [Role: App Role Setup and Authorization](../system-overview/role-app.md)
 
 ###### 	[Role: Checking and Reporting Authorizations](../system-overview/role-privileges.md)
 
