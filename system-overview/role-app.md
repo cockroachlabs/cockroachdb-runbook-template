@@ -39,7 +39,6 @@ CREATE USER app_ro_report WITH LOGIN;
 
 -- OLTP application, with read and write privileges
 CREATE USER app_rw_oltp WITH LOGIN;
-
 ```
 
 The new application roles do not have access to business data in the cluster until explicitly authorized. However they have privileges inherited from `public` group (role), as explained in [Role: Checking and Reporting Authorizations](../system-overview/role-privileges.md#nuanced-points-about-roles-and-privileges).
@@ -52,34 +51,44 @@ The new application roles do not have access to business data in the cluster unt
 
 ### Create Database and Authorize Database Users
 
-< work in progress >
+The highlights of the authorization model implemented in this example:
+
+- A new database ODS is create by a staff DBA user, then the ownership is permanently transferred to the "group" DBA role for consistency and to avoid dependency on individual DBA users whose role may change.
+- The `public` schema is "disabled". **TODO!!!!! IT MEANS WHO CAN CREATE?**
+- The non-DBA users receive database-wide (across all schemas in `ods`) privileges  via DEFAULT PRVILEGES mechanism, which is the simplest (i.e. not prone to inadvertent errors) and easiest to maintain. A DBA role has sufficient privileges to further tighten this example model with schema- or even table- scoped grants, if required. 
+- The "read-write" application role is authorized to:
+  - List all schemas and objects in database `ods`
+  - View metadata/system info from tables in schemas  `ods.information_schema` , `ods.pg_catalog`, `ods.pg_extension`, and `ods.crdb_internal`.
+  - Read / write to the application tables owned and managed by `dba`
+  - Create / read / write / drop additional - presumed temporary - tables (complete lifecycle, since the owner)
+  - Use / invoke sequences (e.g. `nextval()`), types, UDFs and Stored Procedures owned and managed by `dba`
+
+The "read-only" application role is authorized to:
+
+- List all schemas and objects in database `ods`
+- View metadata/system info from tables in schemas  `ods.information_schema` , `ods.pg_catalog`, `ods.pg_extension`, and `ods.crdb_internal`.
+- Read from the application tables owned and managed by `dba`
+- Use / invoke sequences (e.g. `nextval()`), types, UDFs and Stored Procedures owned and managed by `dba`
+
+
 
 ```sql
-
 -- Create a new operational data store and make DBA its owner, implicitly - with ALL PRIVILEGES
 
--- Note https://github.com/cockroachdb/cockroach/issues/121808
--- A database owner 
+-- A database owner will be unable to
 -- DROP   DATABASE IF EXISTS     ods  CASCADE;
+-- The DROP statement requires admin (root) role
+-- as a temporary workaround until this defect is resolved:
+-- https://github.com/cockroachdb/cockroach/issues/121808
+
 CREATE DATABASE IF NOT EXISTS ods;
 ALTER DATABASE ods OWNER TO dba;    -- make the non-interactive DBA group (role) the owner! 
 
 -- Ensure the current database is set. Default privileges require the current database context.
 USE ods;
 
--- Grant authorizations to 2 application roles - read-write and read-only
-GRANT CONNECT      ON DATABASE ods                  TO app_rw_oltp; -- e.g. show schemas; show tables;
-ALTER DEFAULT PRIVILEGES GRANT USAGE,
-                               CREATE  ON SCHEMAS   TO app_rw_oltp;
-ALTER DEFAULT PRIVILEGES GRANT INSERT,
-                               SELECT,
-                               UPDATE,
-                               DELETE  ON TABLES    TO app_rw_oltp;
-ALTER DEFAULT PRIVILEGES GRANT SELECT,
-                               USAGE   ON SEQUENCES TO app_rw_oltp;
-ALTER DEFAULT PRIVILEGES GRANT USAGE   ON TYPES     TO app_rw_oltp;
-ALTER DEFAULT PRIVILEGES GRANT EXECUTE ON FUNCTIONS TO app_rw_oltp;
 
+-- Grant authorizations to a "read-only" application role
 GRANT CONNECT      ON DATABASE ods                  TO app_ro_report; -- e.g. show schemas; show tables;
 ALTER DEFAULT PRIVILEGES GRANT USAGE   ON SCHEMAS   TO app_ro_report;
 ALTER DEFAULT PRIVILEGES GRANT SELECT  ON TABLES    TO app_ro_report;
@@ -87,14 +96,25 @@ ALTER DEFAULT PRIVILEGES GRANT USAGE   ON SEQUENCES TO app_ro_report;
 ALTER DEFAULT PRIVILEGES GRANT USAGE   ON TYPES     TO app_ro_report;
 ALTER DEFAULT PRIVILEGES GRANT EXECUTE ON FUNCTIONS TO app_ro_report;
 
+-- Grant authorizations to a "read-write" application role
+GRANT CONNECT      ON DATABASE ods                  TO app_rw_oltp; -- e.g. show schemas; show tables;
+ALTER DEFAULT PRIVILEGES GRANT USAGE,
+                               CREATE  ON SCHEMAS   TO app_rw_oltp;
+ALTER DEFAULT PRIVILEGES GRANT INSERT,
+                               SELECT,
+                               UPDATE,
+                               DELETE  ON TABLES    TO app_rw_oltp;
+ALTER DEFAULT PRIVILEGES GRANT USAGE   ON SEQUENCES TO app_rw_oltp;
+ALTER DEFAULT PRIVILEGES GRANT USAGE   ON TYPES     TO app_rw_oltp;
+ALTER DEFAULT PRIVILEGES GRANT EXECUTE ON FUNCTIONS TO app_rw_oltp;
+
 
 -- Tighten up data access from permissive Public role group and Public schemas
 REVOKE CONNECT ON DATABASE ods FROM public;
--- As of May 2024 the statement below requires admin (root) role
--- as a temporary workaround until this defect is fixed
+-- The statement below requires admin (root) role
+-- as a temporary workaround until this defect is resolved
 -- (https://github.com/cockroachdb/cockroach/issues/121808)
 REVOKE ALL ON SCHEMA ods.public FROM public;
-
 ```
 
 
@@ -107,8 +127,9 @@ REVOKE ALL ON SCHEMA ods.public FROM public;
 
 A common DBA practice is to maintain tables used by an application or an application component in a named schema. In this example a DBA persona `dba_staff_minnie`  creates and sets up a schema `reporting`, with consistent ownership and helpful search_path:
 
-```sql
 
+
+```sql
 -- Ensure the current database is set
 USE ods;
 
@@ -137,7 +158,6 @@ ALTER  TABLE reporting.account OWNER TO dba;
 
 CREATE SEQUENCE reporting.ordinal CACHE 10;
 ALTER  SEQUENCE reporting.ordinal OWNER TO dba;
-
 ```
 
 
