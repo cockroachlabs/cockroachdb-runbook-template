@@ -54,7 +54,7 @@ The new application roles do not have access to business data in the cluster unt
 The highlights of the authorization model implemented in this example:
 
 - A new database ODS is create by a staff DBA user, then the ownership is permanently transferred to the "group" DBA role for consistency and to avoid dependency on individual DBA users whose role may change.
-- The `public` schema is "disabled". **TODO!!!!! IT MEANS WHO CAN CREATE?**
+- The `public` schema is "disabled".
 - The non-DBA users receive database-wide (across all schemas in `ods`) privileges  via DEFAULT PRVILEGES mechanism, which is the simplest (i.e. not prone to inadvertent errors) and easiest to maintain. A DBA role has sufficient privileges to further tighten this example model with schema- or even table- scoped grants, if required. 
 - The "read-write" application role is authorized to:
   - List all schemas and objects in database `ods`
@@ -70,9 +70,13 @@ The "read-only" application role is authorized to:
 - Read from the application tables owned and managed by `dba`
 - Use / invoke sequences (e.g. `nextval()`), types, UDFs and Stored Procedures owned and managed by `dba`
 
-
+The script:
 
 ```sql
+--------------------------------------------------------------+
+-- Connect as non-admin dba persona e.g. 'dba_staff_minnie'   |
+--------------------------------------------------------------+
+
 -- Create a new operational data store and make DBA its owner, implicitly - with ALL PRIVILEGES
 
 -- A database owner will be unable to
@@ -130,6 +134,10 @@ A common DBA practice is to maintain tables used by an application or an applica
 
 
 ```sql
+--------------------------------------------------------------+
+-- Connect as non-admin dba persona e.g. 'dba_staff_minnie'   |
+--------------------------------------------------------------+
+
 -- Ensure the current database is set
 USE ods;
 
@@ -143,10 +151,10 @@ ALTER SCHEMA ods.reporting OWNER TO dba;  -- make the non-interactive DBA group 
 -- ALTER DATABASE  ods SET search_path = reporting;
 -- (https://github.com/cockroachdb/cockroach/issues/123287)
 -- To work around (takes effect on new connections):
-ALTER USER  app_ro_report    SET SEARCH_PATH TO reporting;
-ALTER USER  app_rw_oltp      SET SEARCH_PATH TO reporting;
-ALTER USER  dba_staff_mickey SET SEARCH_PATH TO reporting;
-ALTER USER  dba_staff_minnie SET SEARCH_PATH TO reporting;
+ALTER USER  app_ro_report    IN DATABASE ods SET SEARCH_PATH TO reporting;
+ALTER USER  app_rw_oltp      IN DATABASE ods SET SEARCH_PATH TO reporting;
+ALTER USER  dba_staff_mickey IN DATABASE ods SET SEARCH_PATH TO reporting;
+ALTER USER  dba_staff_minnie IN DATABASE ods SET SEARCH_PATH TO reporting;
 -- For convenience of the current user `dba_staff_minnie`
 -- also SET to take effect immediately in the current session
 SET SEARCH_PATH TO reporting;
@@ -161,6 +169,20 @@ ALTER  SEQUENCE reporting.ordinal OWNER TO dba;
 ```
 
 
+
+
+
+------
+
+##### Appendix. Application Role Authorization Test
+
+This utility SQL script may assist with custom authorization model tests.
+
+ 
+
+```sql
+asdasd
+```
 
 
 
