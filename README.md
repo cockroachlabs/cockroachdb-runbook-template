@@ -67,6 +67,7 @@ In practice, CockroachDB operators will strive to automate most of the checks an
         * [Changefeeds](monitoring-alerts/alert-cdc.md)
         * [Version Mismatch](monitoring-alerts/alert-version-mismatch.md)
         * [Expirations](monitoring-alerts/alert-expirations.md)
+    * [System Activity Report Configuration](monitoring-alerts/sar.md)
 1. **[Diagnostic and Support](diagnostic-support)**
     * [Troubleshooting SQL Workload Contention](diagnostic-support/troubleshooting-sql-contention.md)
     * [Troubleshooting Hardware Resource Contention](diagnostic-support/troubleshooting-hardware-contention.md)
@@ -75,5 +76,4 @@ In practice, CockroachDB operators will strive to automate most of the checks an
     * [Node Wipe](emergency-procedures/node-wipe.md)
     * [Node LSM Compaction](emergency-procedures/lsm-compact.md)
     * [CockroachDB server/VM replacement](emergency-procedures/server-vm-replacement.md)
-
 
