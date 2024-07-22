@@ -28,7 +28,7 @@ Change the `cron` schedule to run SAR job at 1 minute interval (the lowest avail
 - Enter 1 minute interval 
   `*/1 * * * * root /usr/lib64/sa/sa1 1 1`
 
-- Save the file. You are done. There is no need to restart `cron ` after modifying a crontable because `cron` automatically checks its crontables' mod times every minute and reloads the modified ones.
+- Save the file. There is no need to restart `cron ` after modifying a crontable because `cron` automatically checks its crontables' mod times every minute and reloads the modified ones.
 
 ##### 3. Expand Default SAR Metrics Collection
 
