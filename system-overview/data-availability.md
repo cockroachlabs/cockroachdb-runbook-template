@@ -82,7 +82,7 @@ Version 23.1 introduces an [experimental cluster setting](https://github.com/coc
 
 
 
-#### Maximum Disruption Controls
+#### Maximum Disruption Control
 
 Precisely calculating the maximum disruption interval is not possible because it depends on non-trivial interactions between many factors, including randomized time intervals (used, for example, in Raft leader elections). These factors include network round trip latencies, network timeouts, connection timeouts, Raft elections timeouts, re-proposal timeouts, cache invalidation, retry policies, etc. The estimates below are empirical, based on actual measurements during performance characterization testing in CockroachDB engineering lab.
 
