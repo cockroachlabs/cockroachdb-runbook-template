@@ -90,8 +90,6 @@ Day 2 builds on Day 1 task list, with emphasis on completeness and automation of
 
 
 
-Automation - focus/main theme of day 2... as clusters grow, over 50 must automate all   themes are operations runbook completeness and automation of all procedures end to end
-
 - [ ] Remaining runbook procedures. As production CockroachDB clusters grow past 30 nodes, end-to-end automation of all cluster operations become necessary.
 
   Tasks in this section:
