@@ -2,7 +2,7 @@
 
 ### Summary
 
-The curated list of "100 Essential CockroachDB Metrics" enables operators to build custom dashboards built with tools like Grafana and Datadog. All metrics in this list are important to *observe*, i.e. visualize in a custom dashboard. Each metric in this list "tells a story" and a narrative how to make a practical/actionable use of each metric in a production deployment is included in the corresponding column. (Missing narratives will be added shortly, this is work in progress until all narratives are provided.)
+The curated list of "100 Essential CockroachDB Metrics" enables operators to build custom dashboards built with tools like Grafana and Datadog. All metrics in this list are important to *observe*, i.e. visualize in a custom dashboard. Each metric in this list "tells a story" and a narrative how to make a practical/actionable use of each metric in a production deployment is included in the corresponding column.
 
 A subset of these metrics should also be *alerted* on. The alerts are listed in the "[Monitoring and Alerting](./)" section of this runbook template.
 
