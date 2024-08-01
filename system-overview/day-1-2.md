@@ -78,7 +78,7 @@ Below is a categorized list of Day 1 preparedness tasks. The order of items does
   - [ ] **Cluster health pre-check**, as suggested in [this article](../routine-maintenance/maintenance-pre-check.md), shall be integrated into all routine maintenance procedures as a pre-requisite initial step.
   - [ ] **Alert response procedures**. A step-by-step remediation procedure for each of the essential alerts (see Monitoring section) shall be developed and documented in the operations manual (runbook).
   - [ ] **Troubleshooting / triage**. Cluster operators' enablement should include training to acquire triage skill and be able to identify whether an issue is CockroachDB related or not.
-  - [ ] **Support  escalation** to Cockroach Labs Tech Support (Level 2).  CockroachDB operations manual (runbook) should include a detailed protocol for opening a new support request. Following "good ticket" best practices will streamline interactions during information gathering, avoid repeating troubleshooting steps that have already been performed and ultimately - reduce TTR (time to resolution). < TODO: Add a pointer to support's "Anatomy of a Good Ticket" >
+  - [ ] **Support  escalation** to Cockroach Labs Tech Support (Level 2).  CockroachDB operations manual (runbook) should include a detailed protocol for opening a new support request. Following "good ticket" best practices will streamline interactions during information gathering, avoid repeating troubleshooting steps that have already been performed and ultimately - reduce TTR (time to resolution). [TODO: Add a pointer to support's "Anatomy of a Good Ticket"]
 
 
 
@@ -89,7 +89,7 @@ Below is a categorized list of Day 1 preparedness tasks. The order of items does
 
 Day 2 builds on Day 1 task list, with emphasis on completeness and automation of all daily operations routines.
 
-< This section is work in progress >
+*< This section is work in progress >*
 
 - [ ] Remaining runbook procedures, across all sections. As production CockroachDB clusters grow past 30 nodes, end-to-end automation of all cluster operations, in practice, becomes a requirement.
 
