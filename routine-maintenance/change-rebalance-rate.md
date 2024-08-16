@@ -31,7 +31,7 @@ The snapshot transfer mechanism is the same, but the transfer priority is differ
 - A snapshot encapsulates one range, up to about 512 MB in size
 - A node can send 2 snapshots at a time
 - A node can receive 1 snapshot at a time
-- Max rate configuration settings limit the receiver's rate
+- Max rate configuration setting limits the receiver's rate
 - A receiver endures heavier load and is effectively another limiting factor
 
 
