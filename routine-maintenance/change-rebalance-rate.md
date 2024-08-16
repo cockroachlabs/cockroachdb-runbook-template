@@ -29,16 +29,16 @@ The snapshot transfer mechanism is the same, but the transfer priority is differ
 ![Snapshot zoom-in](./res/snapshot2.png)
 
 - A snapshot encapsulates one range, up to about 512 MB in size
-- A node can send 1 snapshot at a time
+- A node can send 2 snapshots at a time
 - A node can receive 1 snapshot at a time
-- Max rate configuration settings limit the sender's rate
+- Max rate configuration settings limit the receiver's rate
 - A receiver endures heavier load and is effectively another limiting factor
 
 
 
 ### Considerations for Setting the Max Rates
 
-The default values for the max rates is 32 MB/s. It is very conservative for most real-world workloads.
+The default values for the max rates is 32 MB/s. It is conservative for most real-world workloads.
 
 > ✅  Operators are encouraged to weigh in all considerations and set the cluster's max rates once for *all* routine maintenance and emergency operations. Setting the rates to different values by an operating procedure is risky and therefore not recommended.
 
@@ -62,12 +62,11 @@ A snapshot receiver has more storage level work to do, particularly new writes. 
 
 **Selecting the Snapshot Rates**
 
-CRL's customer experience shows that 256 MB/s is a good setting for most real world-workload.
+CRL's customer experience shows that 128 MB/s is a good setting for most real world-workload without impacting the workload. Setting it to 256 MB/s is possible if a small workload impact is acceptable.
 
 Capping the network allocation for rebalancing / recovery snapshots does not compromise the network bandwidth necessary to support user workloads. CockroachLabs recommends 10Gb or better network. 250 MB/s is no more than 20% of the total available network bandwidth. That leaves at least 8Gb/s to support SQL workload related data transfers, which is sufficient. 
 
-> Increasing the max rates from the recommended 256 MB/s to a higher rate is not expected to have any effect in v22.2 or earlier. Increasing the cap doesn't mean that the sender *is able* to send a snapshot any faster or the receiver can *apply* it faster. The effective snapshot transfer rate depends on CPU and disk IO resources, as well as implementation algorithm. In the v22.2 or earlier, the slowest part of the snapshot transfer pipeline bottleneck is the receiver. The recommended 256 MB/s rate cap is higher than what the receiver can process in the current implementation.
-
+> Increasing the max rates above 256 MB/s will not typically have any effect. Increasing the cap doesn't mean that the sender *is able* to send a snapshot any faster or the receiver can *apply* it faster. The effective snapshot transfer rate depends on CPU and disk IO resources, as well as implementation algorithm. The slowest part of the snapshot transfer pipeline bottleneck is the receiver. The recommended 256 MB/s rate cap is higher than what the receiver can process in the current implementation for typical hardware configurations.
 
 
 
