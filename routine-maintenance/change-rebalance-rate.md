@@ -66,7 +66,7 @@ CRL's customer experience shows that 128 MB/s is a good setting for most real wo
 
 Capping the network allocation for rebalancing / recovery snapshots does not compromise the network bandwidth necessary to support user workloads. CockroachLabs recommends 10Gb or better network. 250 MB/s is no more than 20% of the total available network bandwidth. That leaves at least 8Gb/s to support SQL workload related data transfers, which is sufficient. 
 
-> Increasing the max rates above 256 MB/s will not typically have any effect. Increasing the cap doesn't mean that the sender *is able* to send a snapshot any faster or the receiver can *apply* it faster. The effective snapshot transfer rate depends on CPU and disk IO resources, as well as implementation algorithm. The slowest part of the snapshot transfer pipeline bottleneck is the receiver. The recommended 256 MB/s rate cap is higher than what the receiver can process in the current implementation for typical hardware configurations.
+> Increasing the max rates above 256 MB/s will typically have no effect. Increasing the cap doesn't mean that the sender *is able* to send a snapshot any faster or the receiver can *apply* it faster. The effective snapshot transfer rate depends on CPU and disk IO resources, as well as implementation algorithm. The slowest part of the snapshot transfer pipeline bottleneck is the receiver. The recommended 256 MB/s rate cap is higher than what the receiver can process in the current implementation for typical hardware configurations.
 
 
 
