@@ -174,20 +174,6 @@ ALTER  SEQUENCE reporting.ordinal OWNER TO dba;
 
 ------
 
-##### Appendix. Application Role Authorization Test
-
-This utility SQL script may assist with custom authorization model tests.
-
- 
-
-```sql
-asdasd
-```
-
-
-
-------
-
 ###### Related Articles:
 
 ###### 	 [Role: DBA Role Setup and Authorization](../system-overview/role-dba.md)

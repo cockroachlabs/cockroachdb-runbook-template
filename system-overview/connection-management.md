@@ -175,11 +175,54 @@ listen stats
 
 
 
-#### Load Balancing in a Cloud Deployment (Google Cloud Example)
+#### Load Balancing in a Cloud Deployment - Google Cloud Load Balancing
 
-In a cloud deployment, a regional [native load balancer](https://cloud.google.com/load-balancing/docs/load-balancing-overview) is typically provisioned to route connections to CockroachDB nodes in that region. This load balancer is implemented in the network fabric and operates across AZs, with [AZ loss survivability](https://cloud.google.com/load-balancing/docs/choosing-load-balancer#outage-resilience).   
+In a Google cloud deployment, a regional [native load balancer](https://cloud.google.com/load-balancing/docs/load-balancing-overview) is typically provisioned to route connections to CockroachDB nodes in that region. This is an OSI Layer 4 load balancer implemented in the network fabric. It operates across AZs, with [AZ loss survivability](https://cloud.google.com/load-balancing/docs/choosing-load-balancer#outage-resilience).   
 
 Google Cloud load balancers are typically deployed in the following configuration: [internal](https://cloud.google.com/load-balancing/docs/choosing-load-balancer#external-internal), [regional](https://cloud.google.com/load-balancing/docs/choosing-load-balancer#global-regional), in [pass-through](https://cloud.google.com/load-balancing/docs/choosing-load-balancer#proxy-pass-through) mode, optionally with [global access](https://cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing#global_access).
+
+
+
+#### Load Balancing in a Cloud Deployment - AWS Network Load Balancers
+
+In a AWS cloud deployment, a regional [network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html) with [cross zone load balancing](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html#cross-zone-load-balancing) enabled (per Cockroach Labs deployment reference) is typically provisioned to route connections to CockroachDB nodes in that region. This load balancer functions at the 4th layer of the OSI model.
+
+CockroachDB operators in AWS cloud should be aware of the following caveats: 
+
+###### AWS NLB Mixing Up TCP Connections
+
+Application connections to CockroachDB via AWS NLB can be disrupted by `connection reset` errors or timeouts if both *client IP preservation* and *cross zone load balancing* are enabled in NLB configuration.
+
+The impact on a user workload is a reduced SQL throughput due to reconnect and re-try overhead. However AWS troubleshooting paragraphs above suggest that application clients can also experience connection timeouts.
+
+The issue is described in [this article](https://medium.com/swlh/nlb-connection-resets-109720accfc6).  AWS provides two troubleshooting paragraphs pertinent to this issue:
+https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-troubleshooting.html#loopback-timeout
+https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-troubleshooting.html#intermittent-connection-failure
+
+The issue can be eliminated only by disabling <u>either</u> *client IP preservation* <u>or</u> *cross zone load balancing*.
+
+Since Cockroach Labs only has operating experience with *cross zone load balancing* enabled (the deployment reference), realistically the operator's decision is whether to disable *client IP preservation* or not. Disabling *client IP preservation* will deny the database an opportunity to track client connections (all client SQL connections will be reported as originating at NLB's IP address), which may obstruct effective troubleshooting. Keeping *client IP preservation* enabled will lead to intermittent performance “dips”, which could be an acceptable in some workloads since there should be no service continuity disruptions.
+
+###### CockroachDB Node/VM Failure Detection/Health Check
+
+Cockroach Labs recommends configuring load balancers with 2 seconds health check interval and taking a VM out of rotation upon 3 consecutive health check failures. These settings provide a predictable VM failure detection in less than 10 seconds.
+
+The NLB defaults for VM health checks (see table below) result in a VM failure detection taking up to 30 seconds, which is considered too lose. We understand 5 seconds is the lowest technically feasible value for HC interval and timeout.
+
+To enable the fastest possible VM failure detection (~15 seconds):
+
+- Change both *Server Health Check* Interval and *Check Timeout* to 5 seconds
+- Keep *Unhealthy Threshold* at the default 2
+
+The following table summarizes the NLB target Health Check setting values:
+
+| NLB Setting                  | NLB Default Value         | CRL Recommended Value     | NLB Best (Lowest) Available Value |
+| ---------------------------- | ------------------------- | ------------------------- | --------------------------------- |
+| Server Health Check Interval | 10 secs                   | 2 secs                    | **5 secs**                        |
+| Unhealthy Threshold          | 2 consecutive HC failures | 3 consecutive HC failures | **2 consecutive HC failures**     |
+| Check Timeout                | 10 secs                   | 2 secs                    | **5 secs**                        |
+
+> 👉 To ensure orderly connections failover during regular rolling maintenance, the Load Balancer settings must be coordinated with CockroachDB Cluster settings. Follow the guidance in the [node shutdown](../routine-maintenance/node-stop.md#avoiding-application-service-interruptions-due-to-node-shutdown) article.
 
 
 
@@ -190,7 +233,7 @@ The best practices for CockroachDB cluster connection pooling are as follows:
 - The size of the connection pool should not exceed 4 (four) times the total vcpus in the cluster, presuming connections are evenly distributed across cluster nodes. Many workloads perform best when the maximum number of active connections is between 2 and 4 times the number of CPU cores in the cluster.
 - Configure the pool with the MIN connections = MAX connections = the connection pool size. Adjust when cluster topology changes.
 - Do not set tight *idle -anything* timeouts, e.g. for idle connections in the pool. This is best done in the application tier.
-- Set the *maximum connection life* to something between 30 and 60 minutes, as recommended in the [connection balancing](#connection-balancing) section. Less than 30 minutes may add a non-trivial re-connect overhead, particular with TLS. Over 60 minutes may make connection rebalancing sluggish.
+- Set the *maximum connection life* to around 30 minutes (give and take), per considerations outlined in the [connection balancing](#connection-balancing) section.
 
 From a practical standpoint, connections pool products have either in-process (a library linked into application executable) or out-of-process (external process).
 
@@ -272,7 +315,8 @@ Here is an example scenario resulting in a connection imbalance:
 
 To handle this case efficiently and without disorderly connection termination, operators may utilize the following *mitigation techniques:*
 
-- Configure a connection max lifetime in the connection pool. This will force a periodic connection recycling, maintaining a reasonable connection balance. A `1 hour` may be a good starting point when fine tuning for specific application requirements. A lower value will allow a more vigorous connection balancing at the expense of a higher re-connect overhead which may adverse effects on the workload performance. In general, max connection life should not be less than `30 minutes`, yet some CockroachDB operators have is a low as `10 minutes`. This value selection should be coordinated with the [snapshot rebalancing rate](../routine-maintenance/change-rebalance-rate.md) setting (or rather measurements of the elapsed time to complete node data rebalancing for the given rate setting), so *connections* are rebalanced to new nodes reasonably promptly following a cluster expansion.
+- Configure a connection max lifetime in the connection pool. This will force a periodic connection recycling, maintaining a reasonable connection balance. A `30 minutes` may be a good starting point when fine tuning for specific application requirements. The range for the max connection lifetime is between 10 and 60 minutes. A lower value will allow a more vigorous connection balancing at the expense of a higher re-connect overhead. Less than 10 minutes may add a measurable re-connect overhead (particularly with TLS) with an adverse effects on the workload performance. Over 60 minutes may make connection rebalancing sluggish.
+- This value selection should be coordinated with the [snapshot rebalancing rate](../routine-maintenance/change-rebalance-rate.md) setting (or rather measurements of the elapsed time to complete node data rebalancing for the given rate setting), so *connections* are rebalanced to new nodes reasonably promptly following a cluster expansion.
 - Instead of effective, yet simplistic `roundrobin` load balancing algorithm, configure a method that is aware of the current number of server connections, such as [HAProxy](http://cbonte.github.io/haproxy-dconv/1.7/configuration.html#4-balance)'s  `leastconn`, that routs the new connections to nodes with the lowest number of connections. This mitigation technique is not commonly deployed and the potential side effects/scenarios are less studied/understood. This approach is viewed as riskier and requires extra operator's due diligence during QA cycles.
 
 
