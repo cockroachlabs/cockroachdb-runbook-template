@@ -90,11 +90,13 @@ A manual pre-drain may be done before decommissioning a malfunctioning node as a
 
    `cockroach node decommission <space separated list of node ids> --host=…`
 
-   decommissioning all nodes at once is expected to work best. Alternatively decommission 1 node at a time, but ensure that only one `cockroach node decommission` command runs at a time.
+   decommissioning all nodes at once is expected to work best. Alternatively decommission 1 node at a time.
 
    
 
 5. Observe the status:
+
+   `cockroach node status ...`
 
    ```
     id | is_live | replicas | is_decommissioning | is_draining 
@@ -105,7 +107,7 @@ A manual pre-drain may be done before decommissioning a malfunctioning node as a
 
    
 
-6. `cockroach node status <id> --all` or observe the node(s)' status in DB Console.
+6. `cockroach node status <id> --all ...` or observe the node(s)' extended status in DB Console.
 
    Confirm that decommissioned node(s)' status is  DECOMMISSIONED. If a node status is "DECOMMISSIONING", some maintenance operations, such as release upgrades, can not proceed.
 

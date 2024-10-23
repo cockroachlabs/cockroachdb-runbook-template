@@ -155,8 +155,23 @@ However, if a major cluster upgrade *has been finalized*, the on-disk data forma
 
 A risk averse operator would plan precautionary steps and maximize the opportunity for a version downgrade in case a major release upgrade exposed an unexpected issue:
 
-- Always [disable auto-finalization](https://www.cockroachlabs.com/docs/stable/upgrade-cockroach-version.html#step-3-decide-how-the-upgrade-will-be-finalized). After the executables (binaries) on all nodes of the cluster have been upgraded, operate the cluster for several days to gain confidence in the new release. Manually finalize the upgrade when the upgrade is perceived successful.
+- Always [disable auto-finalization](https://www.cockroachlabs.com/docs/stable/upgrade-cockroach-version.html#step-3-decide-how-the-upgrade-will-be-finalized). After the executables (binaries) on all nodes of the cluster have been upgraded, operate the cluster for a small number of days to gain confidence in the new release. Manually finalize the upgrade when the upgrade is perceived successful.
 - Take a full cluster backup immediately prior to manually finalizing the upgrade. This will provide a restore savepoint should a disruptive issue be discovered after the cluster is finalized.
+
+
+
+### Finalizing a Major Release Upgrade
+
+A major upgrade should not be left un-finalized for an extended period of time, beyond a small number of days necessary to gain confidence in the new release.
+
+To check whether or not a major release has been finalized, run the following query:
+
+```sql
+SELECT count(*) = 0 AS last_upgrade_is_finalized
+FROM crdb_internal.kv_node_status WHERE server_version != (SELECT version FROM [show cluster setting version]);
+```
+
+If the query returns `true` - the last major upgrade has been finalized. If `false` - the upgrade is in an un-finalized state which may require an operator's action.
 
 
 

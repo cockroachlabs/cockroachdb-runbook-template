@@ -12,7 +12,13 @@ During a node *shutdown*, a *node drain* is followed by a node *process terminat
 There are two ways to handle shutdown:
 
 - issue a *node drain* first, inspect (manually or via monitoring) that it completes, then separately issue *process termination*
-- send a signal to the process to trigger both *node drain* and *process termination* automaticaly (ie automated shutdown).
+- send a signal to the process to trigger both *node drain* and *process termination* automatically (i.e. automated shutdown).
+
+> 
+>
+> ✅  Prior to initiating any routine maintenance procedure, including this one, run the pre-requisite [cluster health check](./maintenance-pre-check.md) !
+
+
 
 ### How to trigger Drain Only, Without Process Termination
 
