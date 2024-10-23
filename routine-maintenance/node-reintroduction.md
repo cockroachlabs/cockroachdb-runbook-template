@@ -10,9 +10,13 @@ This procedure may be used for emergency repairs, for example to swap a cluster 
 ### Considerations For Reintroducing Multiple Nodes
 
 Definition:
+
 Light write workload - less than 10% of queries are writes
+
 Average write workload - 15-20% of queries are writes
+
 Heavy write workload - >25% of queries are writes
+
 
 1. In the event of a region failure, up to 1/3 of the nodes in a cluster may be unavailable for a period of time.  Once enough data changes have occurred on the diminished cluster, the reintroduction of the segmented nodes can become more work to reconcile the differences than to add new nodes and start replicating data from scratch.
 
