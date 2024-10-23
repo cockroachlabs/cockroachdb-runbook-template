@@ -40,11 +40,11 @@ The below list will help identify focus-areas and testing strategies to consider
 
 ## Full and incremental cluster-wide backups
 
-Depending on the cadence of backups (eg: hourly, daily), CockroachDB by default assumes an incremental backup, and creates a second schedule with a larger candence that relative to the user-specified schedule. This is specifically documented with pre-defined candence rules tied to the [FULL BACKUP crontab](https://www.cockroachlabs.com/docs/v22.2/create-schedule-for-backup#parameters) parameters.
-While you can force a full-backup for each scheduled trigger, in most cases this is not necessary because it generates undue workload on the cluster and consumes large volumes of storage.
+Depending on the backup frequency(eg: hourly, daily), CockroachDB (by default) assumes an incremental backup, and creates a second relative, less-frequent schedule to perform a full backup. This is specifically documented with pre-defined rules tied to the [FULL BACKUP crontab](https://www.cockroachlabs.com/docs/stable/create-schedule-for-backup#parameters) parameters.
+While you can force a full-backup at each scheduled trigger, for most cases this is not necessary because it generates undue workload on the cluster and consumes large volumes of storage.
 - The backup process reads the entire cluster. From a byte-size perspective it can exceed GB or event TB sizes), and the backup process 
 - Both full and incremental backups create independent packages and folder structures
-- Incremental backups rely on the previous full (or incremental) backup data to perform a backup from the previous point in time.
+- Incremental backups rely on the previous full (or incremental) backup data to perform a backup from the previous point in time. Max allowed incrementals per full backup is 400, so for example if you run a backup every 5 minutes this yields 288 per-day, at which point a full-backup can be taken to reset this counter.  This is listed with clarity in our [Recommendations for incremental backup frequency](https://www.cockroachlabs.com/docs/stable/take-full-and-incremental-backups#recommendations-for-incremental-backup-frequency)
 
 ## Backup & Restore operations using AWS S3
 
