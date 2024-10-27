@@ -2,17 +2,25 @@
 
 ### About this Procedure
 
-The 2 cluster settings - `kv.snapshot_rebalance.max_rate` and `kv.snapshot_recovery.max_rate` allow an operator to control the speed of the elastic data rebalancing and of up-replication to restore the designed replication factor.
+The cluster setting `kv.snapshot_rebalance.max_rate` allows an operator to control the speed of the elastic data rebalancing, i.e. moving replicas between cluster nodes for:
 
-These settings limit the raft snapshot transfer rate *on the sender*. If a node (store) is sending a snapshot faster than the this rate cap, the sender is throttled down to that rate.
+- uniform range distribution
+- load-based rebalancing
+- range splits & merges
+- user actions
+- up-replication to restore the designed replication factor to meet its survival goals, for example after a node failure
 
-The *Rebalance* rate is used for moving replicas between cluster nodes for uniform range distribution, load-based rebalancing, range splits & merges, and user actions.
+All actions above leverage the same raft snapshot transfer mechanism however the recovery action has a higher priority than rebalancing actions.
 
-The *Recovery* rate is used for up-replication of replicas to meet its survival goals, for example after a node failure.
+This setting limits the snapshot transfer rate *on the sender*. If a node (store) is sending a snapshot faster than the this rate cap, the sender is throttled down to that rate.
 
-The snapshot transfer mechanism is the same, but the transfer priority is different - recovery has a higher priority than rebalance.
 
-> ✅  The 2 cluster settings `kv.snapshot_rebalance.max_rate` and `kv.snapshot_recovery.max_rate`  **should always be set to the same value**. 
+
+> ✅  CockroachDB v23.1 and earlier had 2 separate cluster settings for rebalance and recovery snapshots - `kv.snapshot_rebalance.max_rate` and `kv.snapshot_recovery.max_rate`.
+>
+> In CockroachDB v23.1 and earlier versions the `kv.snapshot_recovery.max_rate` should always be set to the same value as `kv.snapshot_rebalance.max_rate`.
+>
+> `kv.snapshot_recovery.max_rate` cluster setting was deprecated in v23.2.
 
 
 
@@ -62,9 +70,9 @@ A snapshot receiver has more storage level work to do, particularly new writes. 
 
 **Selecting the Snapshot Rates**
 
-CRL's customer experience shows that 128 MB/s is a good setting for most real world-workload without impacting the workload. Setting it to 256 MB/s is possible if a small workload impact is acceptable.
+CRL's customer experience shows that 128 MB/s is a good setting for most real world-workload without impacting the workload. Setting it to 256 MB/s is possible if a probable small workload impact is acceptable.
 
-Capping the network allocation for rebalancing / recovery snapshots does not compromise the network bandwidth necessary to support user workloads. CockroachLabs recommends 10Gb or better network. 250 MB/s is no more than 20% of the total available network bandwidth. That leaves at least 8Gb/s to support SQL workload related data transfers, which is sufficient. 
+Capping the network allocation for rebalancing / recovery snapshots does not compromise the network bandwidth necessary to support user workloads. CockroachLabs recommends 10Gb or better network. 256 MB/s is about 20% of the total available network bandwidth. That leaves at least 8Gb/s to support SQL workload related data transfers, which is sufficient. 
 
 > Increasing the max rates above 256 MB/s will typically have no effect. Increasing the cap doesn't mean that the sender *is able* to send a snapshot any faster or the receiver can *apply* it faster. The effective snapshot transfer rate depends on CPU and disk IO resources, as well as implementation algorithm. The slowest part of the snapshot transfer pipeline bottleneck is the receiver. The recommended 256 MB/s rate cap is higher than what the receiver can process in the current implementation for typical hardware configurations.
 
@@ -76,6 +84,5 @@ Increase the maximum rebalance and recovery rates to 256 MB/s by setting two con
 
 ```
  set cluster setting kv.snapshot_rebalance.max_rate = '256 MB';
- set cluster setting kv.snapshot_recovery.max_rate = '256 MB';
 ```
 
