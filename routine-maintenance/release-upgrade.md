@@ -185,13 +185,14 @@ To maintain supportability of the CockroachDB software, an operator at the minim
 
 Within a major release, the patch release numbers increment monotonously and indicate the stability level progression. In most cases, the most recent patch version within a series is the best choice for a production deployment.
 
-For risk averse operators, the following may be practical:
+*For risk averse operators*, the following may be practical:
 
-- Adopt the cadence of major version updates that matches CockroachDB major release cadence - about every 6 months.
-- Stay one major release behind. Cockroach Labs supports 2 latest major releases. When a new major version is released, it's generally the time to upgrade to the version before the latest.
+- Only consider upgrading to Regular major releases that have been promoted to LTS status.
+- Adopt the minimal cadence of major version updates that matches CockroachDB major release cadence - at present it's about every 6 months (or 2 / year).
+- Stay one major release behind. Cockroach Labs supports 2 latest Regular major releases. When a new Regular major version is released, it's generally the time to upgrade to the Regular version before the latest.
 - There should be no need to make repeated patch upgrades as long as no defect affecting operations is discovered.
-- Determine the earliest patch release candidate that is sufficiently hardened for a production deployment. This would not be an "exact science" but a good faith, educated guess. The Release Notes published in the doc for each patch release include the list of bug fixes that an operator can track. A shrinking list  of bug fixes for a couple of consecutive patch releases  and a perceived "blast radius" of fixed bugs may serve as a gauge of release's stability. Historically, after 5-7 patch releases, the major release is sufficiently hardened for a production deployment and the operator can plan the QA cycle in staging. Lock a production deployment candidate by downloading the latest patch release shortly prior to starting the release validation in QA.
-- In summary, this rule of thumb may work well: "use the latest hardened patch release of the previous major version".
+- Determine the earliest patch release candidate that is sufficiently hardened for a production deployment. For recent Regular releases, risk-averse operators can wait until a Regular release is promoted to LTS status, then select a patch release from the LTS series. For releases v22.2 and earlier, choosing a patch release isn't an "exact science" but a good faith, educated guess. The Release Notes published in the doc for each patch release include the list of bug fixes that an operator can track. A shrinking list  of bug fixes for a couple of consecutive patch releases  and a perceived "blast radius" of fixed bugs may serve as a gauge of release's stability. Historically, after 5-7 patch releases, the major release is sufficiently hardened for a production deployment and the operator can plan the QA cycle in staging. Lock a production deployment candidate by downloading the latest patch release shortly prior to starting the release validation in QA.
+- In summary, this rule of thumb may work well: "use the latest LTS (hardened) patch release of the previous Regular major version".
 
 
 
