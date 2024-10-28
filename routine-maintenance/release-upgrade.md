@@ -147,12 +147,15 @@ Q1: *Prior to the introduction of Innovation major releases, we were required to
 A1: No. There is no change whatsoever for customer who elect to stay on Regular releases only - same upgrade cadence of 2 / year. These customers will be able to upgrade from one Regular release to the next Regular release, skipping Innovation releases entirely.  Cockroach Labs' eventual goal is to reduce the minimum required upgrade cadence to 1 / year.
 
 Q2: *[Maintenance support period](https://www.cockroachlabs.com/docs/releases/release-support-policy#support-phases) for Regular Long Term Support (LTS) releases has been increased to 1 year. Does it mean we are required to upgrade to a new major release only 1 time per year if we use LTS?*
+
 A2: No, it does not. See A1.
 
 Q3: *If we decide to upgrade to an Innovation release, will we have to do major version upgrades more than 2 / year?*
+
 A3: Yes. Innovation release customers must plan to upgrade to the next Regular release and can only upgrade from the previous Regular release. This means the use of every Innovation release increases the minimum number of major version upgrades per year by one.
 
 Q4: *Can I install Innovation release in production?*
+
 A4: Yes. Note, however, that Innovation releases do not have an [Assistance Support period](https://www.cockroachlabs.com/docs/releases/release-support-policy#support-phases) and Maintenance support period is only 6 months. Innovation release customers are expected to upgrade to the next Regular major release when it's available.
 
 
