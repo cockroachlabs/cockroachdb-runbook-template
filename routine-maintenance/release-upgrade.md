@@ -136,7 +136,13 @@ A planned Innovation major releases can only be upgraded to ***from the previous
 
 ##### Long Term Support (LTS) Regular Release Designation
 
-Every Regular major release is promoted to LTS after its series of patch releases demonstrates a continuously high level of stability and performance. LTS designator indicates "the highest level of expected release stability and performance". Innovation releases do not have LTS releases. [[doc quotes](https://www.cockroachlabs.com/docs/releases/release-support-policy.html#regular-releases)].
+LTS designator indicates "the highest level of expected release stability and performance". Innovation releases do not have LTS releases. [[doc quotes](https://www.cockroachlabs.com/docs/releases/release-support-policy.html#regular-releases)].
+
+Every Regular major release is promoted to LTS after its series of patch releases demonstrates a continuously high level of stability and performance. Promotion to LTS is a deliberate process that includes (but not limited to) these quality benchmarks (the minimum thresholds, KPIs, and benchmarks may and likely will change over time):
+
+- A minimum of three month time since the GA release
+- A minimum of 1.5M non-idle CPU hours of cumulative consumption since the GA release in CockroachDB Cloud Dedicated
+- Meet all check boxes of the “Quality Gates”. The Quality Gates list is extensive and accounts for open software defects, closed defects, performance regressions, technical advisories, etc.
 
 
 
