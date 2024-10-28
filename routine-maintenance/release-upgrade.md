@@ -14,7 +14,7 @@ A CockroachDB version consists of three numbers and an optional suffix - [Y.R.P-
 
 The leading two numbers taken together Y.R denote a CockroachDB major release. The major release version describes a stable, documented feature set.
 
-The third number P denotes a patch (or maintenance) release. Patch releases include sets of fixes for software defects. Path release numbers increment monotonously and indicate the stability level progression within a major version.
+The third number P denotes a patch (or maintenance) release. Patch releases include sets of fixes for software defects. Patch release numbers increment monotonously and indicate the stability level progression within a major version. Starting with some patch release number, Regular releases are promoted to a Long Term Support (LTS) series, indicating the  
 
 A hyphen separated suffix `S` may be used for internal versioning purposes (not necessarily visible to users) and in previews. Production releases do not use a suffix in the version number. 
 
@@ -101,6 +101,59 @@ defaultdb> show cluster setting version;
 - During a major release finalization, a cluster may run a series of jobs to process *internal* on-disk format upgrades. This processing is automatic and requires no user intervention. During this time the `show cluster setting version` will be reporting a progression of applied internal on-disk format changes, with versions including hyphen separated suffixes.
 
 - Cockroach Labs is enforcing the development practice of maintaining the on-disk format and inter-node communication protocols unchanged within the series of patch releases of a major version. The current practice stipulates, however, that it is permissible to break backwards-compatibility under extraordinary circumstances such as discovered security vulnerability with an extreme impact. Historically, there had been no case of backward incompatible patch releases. 
+
+
+
+### Major Release Types
+
+Prior to June 2024, only one type of CockroachDB major release was generally available at the cadence of two (2) releases per calendar year.
+
+[After v24.2 (August 2024)](https://www.cockroachlabs.com/docs/releases/#upcoming-releases), the release cadence shifted from a 6 months cycle to a 3 months cycle and a new release type, called "Innovation" release, was introduced in addition to the previous release type that is now called "Regular". Regular and Innovation releases are interleaved, with Regular releases continuing the same cadence of two (2) releases per calendar year.
+
+Cockroach Labs' eventual goal is to support one major upgrade per year.
+
+At present, Innovation Releases are *optional.* They can be “skipped” over when upgrading.
+
+At present, Regular releases can not be "skipped" over. Customers must upgrade to every new Regular major release at the cadence of 2 / year.
+
+
+
+##### Supported Upgrade Paths for Regular Releases
+
+The current Regular major release can be upgraded ***to either the next Regular major, or to the next Innovation major*** releases.
+
+A planned Regular major releases can only be upgraded to ***from the previous Regular*** major release.
+
+
+
+##### Supported Upgrade Paths for Innovation Releases
+
+The current Innovation major release can be upgraded only ***to either the next Regular major*** release.
+
+A planned Innovation major releases can only be upgraded to ***from the previous Regular*** major release.
+
+
+
+##### Long Term Support (LTS) Regular Release Designation
+
+Every Regular major release is promoted to LTS after its series of patch releases demonstrates a continuously high level of stability and performance. LTS designator indicates "the highest level of expected release stability and performance". Innovation releases do not have LTS releases. [[doc quotes](https://www.cockroachlabs.com/docs/releases/release-support-policy.html#regular-releases)].
+
+
+
+##### FAQ
+
+Q1: *Prior to the introduction of Innovation major releases, we were required to upgrade to a new major release 2 times per year.  With the new quarterly cadence of major releases, will we be required to upgrade more frequently than 2 times per year?*
+
+A1: No. There is no change whatsoever for customer who elect to stay on Regular releases only - same upgrade cadence of 2 / year. These customers will be able to upgrade from one Regular release to the next Regular release, skipping Innovation releases entirely.  Cockroach Labs' eventual goal is to reduce the minimum required upgrade cadence to 1 / year.
+
+Q2: *[Maintenance support period](https://www.cockroachlabs.com/docs/releases/release-support-policy#support-phases) for Regular Long Term Support (LTS) releases has been increased to 1 year. Does it mean we are required to upgrade to a new major release only 1 time per year if we use LTS?*
+A2: No, it does not. See A1.
+
+Q3: *If we decide to upgrade to an Innovation release, will we have to do major version upgrades more than 2 / year?*
+A3: Yes. Innovation release customers must plan to upgrade to the next Regular release and can only upgrade from the previous Regular release. This means the use of every Innovation release increases the minimum number of major version upgrades per year by one.
+
+Q4: *Can I install Innovation release in production?*
+A4: Yes. Note, however, that Innovation releases do not have an [Assistance Support period](https://www.cockroachlabs.com/docs/releases/release-support-policy#support-phases) and Maintenance support period is only 6 months. Innovation release customers are expected to upgrade to the next Regular major release when it's available.
 
 
 
