@@ -2,7 +2,7 @@
 
 ### About this Procedure
 
-This procedure is used as a step of larger regular maintenance procedures or as an emergency procedure to resolve an operational issue.
+This procedure is used as a step of larger regular maintenance procedures or as an emergency procedure to resolve an operational issue.  This document assumes that there are no unavailable ranges when node(s) that are down.
 Examples of regular on-line maintenance procedures relying on the reintroduction of nodes after a region or AZ outage.
 This procedure may be used for emergency repairs, for example to swap a cluster node that suffered an underlying *hardware failure*. 
 
