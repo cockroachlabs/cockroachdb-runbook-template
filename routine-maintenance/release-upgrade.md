@@ -128,9 +128,9 @@ A planned Regular major releases can be upgraded to ***from the previous Regular
 
 ##### Supported Upgrade Paths for Innovation Releases
 
-The current Innovation major release can be upgraded only ***to either the next Regular major*** release.
+The current Innovation major release can be upgraded only ***only to the next Regular major*** release.
 
-A planned Innovation major releases can only be upgraded to ***from the previous Regular*** major release.
+A planned Innovation major releases can only be upgraded to ***only from the previous Regular*** major release.
 
 
 
