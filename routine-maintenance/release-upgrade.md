@@ -120,9 +120,9 @@ At present, Regular releases can not be "skipped" over. Customers must upgrade t
 
 ##### Supported Upgrade Paths for Regular Releases
 
-The current Regular major release can be upgraded ***to either the next Regular, or to the next Innovation*** major releases.
+The current Regular major release can be upgraded ***either to the next Regular, or to the next Innovation*** major releases.
 
-A planned Regular major releases can be upgraded to ***from the previous Regular, or from the previous Innovation*** major releases.
+A planned Regular major releases can be upgraded-to ***from the previous Regular, or from the previous Innovation*** major releases.
 
 
 
@@ -130,7 +130,7 @@ A planned Regular major releases can be upgraded to ***from the previous Regular
 
 The current Innovation major release can be upgraded ***only to the next Regular*** major release.
 
-A planned Innovation major releases can be upgraded to ***only from the previous Regular*** major release.
+A planned Innovation major releases can be upgraded-to ***only from the previous Regular*** major release.
 
 
 
