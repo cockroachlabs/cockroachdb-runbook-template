@@ -26,7 +26,7 @@ In principle, an increase the maximum offset may have an adverse effect on user 
 
 >  👉  If the current Cockroach Labs clock management guidance is followed, it is generally safe to reduce the maximum offset to 250 ms from its default value. This default can be explicitly overwritten with the *--max-offset* flag in the node start command.
 
-It is impossible to quantify or predict the exact performance impact as it depends entirely on the specific SQL workload and user driven concurrency. The impact may range from non-measurable to dramatic.
+It is impossible to quantify or predict the exact performance impact as it depends on the specific SQL workload and user driven concurrency. The impact may range from non-measurable to dramatic.
 
 The worst-case scenario is when clocks are in fact well synchronized and the workload is concurrent with long-running transactions. This occurs when transactions are multi-statement, have long running selects with large scans and produce large result sets.
 
@@ -38,26 +38,77 @@ As noted earlier, the size of the result set impacts the probability of retries.
 
 #### Time Smoothing for Leap Second Handling
 
-Reader's familiarity with [leap second clock adjustments](https://en.wikipedia.org/wiki/Leap_second) is implied.
+Reader's familiarity with [leap second clock adjustments](https://en.wikipedia.org/wiki/Leap_second) is implied. In this article, the term clock "jump" is synonymous to the NTP technical term "step".
 
-Timekeeping practiced by different government and business entities can take one of 2 forms when it comes to clock "jumps" in general and leap second handling in particular:
+Timekeeping practiced by different government and business entities can take one of the two forms when it comes to a clock "jump" during a leap second adjustment:
 
-1. Monotonic time - This changes the step threshold from the default of 128ms to 2s. Instead of stepping back  during a leap second, time will be slowed leading up to the leap second in such a way that time will never have to move backwards. Disadvantage: The time leading up to the leap second will not accurately reflect real time.
+1. Monotonic time. Instead of stepping back during a leap second, time will be slowed leading up to the leap second in such a way that time will neither jump nor move backwards. Disadvantage: The time leading up to / following the leap second will not accurately reflect the real time.
 
-2. Accurate time - This keeps the step threshold for a default of 128ms. This can mean going back in time, if the local clock is ahead of reference time.
+2. Accurate time. This can mean a large 1 second clock step and possible going back in time, if the local clock is ahead of reference time.
 
-In both cases consistency/correctness will be preserved by crdb's internal synthetic HLC clock. The difference will be in how the SQL app will use timestamps. The way the system clock behaves will be reflected in the SQL time functions, eg. now() etc. So the real question will be which of these options has the least impact on customer apps.
+*In both cases the data consistency/correctness will be preserved by CockroachDB's internal synthetic HLC clock.* However the operators need to be concerned about 2 often undesirable realities associated with accurate timekeeping (option 2). CockroachDB nodes may spontaneously exit to protect ACID guarantees, causing a commotion in the cluster, if clock steps result in a large clock offset between nodes. And customer's applications may exhibit unexpected behavior if they read the local Linux clock or use SQL time functions like `now()`.
 
-Cockroach Labs has a strong preference for option 1. The priority is for time to be smooth and coordinated across nodes rather than synchronized with UTC. (monotonic is not quite the issue - backwards and forwards jumps are both bad, but are acceptable as long as they're small).
+> 👉 Cockroach Labs has a strong preference for option 1 - monotonic time. The priority is for time to be smooth and coordinated across nodes rather than allowing a synchronized "jump" with UTC.
 
-CRL always referred people to redhat's docs on this question. the "slew" and "smear" options from this doc are acceptable for CRDB, while the "step" options are not. https://access.redhat.com/articles/15145
+Time smoothing of the leap second can be implemented using NTP's *slew* or *smear*. Either is acceptable to CockroachDB while a large *step* is undesirable. Continue to [NTP Sources](#ntp-sources) for platform specific configuration guidance.
+
+#### Time Continuity for Live CockroachDB VM Migrations (Memory Preserving Maintenance)
+
+[Live VM migrations](https://en.wikipedia.org/wiki/Live_migration) are supported by all hypervisors that can be used to run CockroachDB clusters:
+
+- [KVM](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine) (AWS and GCP public clouds)
+- [Hyper-V](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/manage/live-migration-overview) (Azure public cloud)
+- [ESXi](https://www.vmware.com/products/cloud-infrastructure/vsphere/vmotion) (VMware vSphere private cloud)
+
+Live VM migrations is an infrastructure level method of enabling platform's operational continuity. It moves a VM running on one physical hardware server to another server without disrupting normal operations.
+
+Live VM migration can support 2 operational tasks - (1) runtime *VM load balancing* (e.g. VMware DRS) and (2) *VMs' memory-preserving maintenance* of the underlying hardware servers running the hypervisor software.
+
+> 👉 Cockroach Labs advises *against* enabling runtime VM load balancing whenever CockroachDB operator has control over this configuration option. In particular, Cockroach Labs advises to keep the Migration Threshold in VMware DRS at a conservative setting for VM migrations during vSphere maintenance only.
+
+Therefore, the focus of this section is narrowed to the best practices for memory-preserving maintenance of CockroachDB VMs.
+
+
+
+### Clock Configuration Guidance
+
+[Summary table for multi-cloud goes here]
+
+How NTP operates:  https://doc.ntp.org/documentation/4.1.0/ntpd/
+
+#### NTP Client Side Configuration
+
+The following Linux configuration guidance applies to CockroachDB guest VMs and non-containerized hardware servers running CockroachDB software.
+
+There are three commonly used NTP clients available on Linux - *timesyncd*, *ntpd*, and *chronyd*.
+
+*Chrony* has many advantages over other NTP clients and is the only NTP client recommended by Cockroach Labs. `Chrony` is the [default NTP user space daemon in Red Hat 7 and onwards](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-configuring_ntp_using_ntpd). `Chrony` is the [recommended optional client](https://documentation.ubuntu.com/server/how-to/networking/serve-ntp-with-chrony/#serve-ntp-with-chrony) by Ubuntu. CockroachDB platform health checks conducted by Cockroach Labs will flag non-crony NTP clients.
+
+`Ntpd` is now deprecated and should not be used in new CockroachDB installations. Starting with Red Hat 8 [ntpd is no longer available](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/infrastructure-services_considerations-in-adopting-rhel-8). By default, `ntpd` is no longer installed in Ubuntu. `Ntpd` may, however, persist through Linux upgrades. Cockroach Labs encourages customers to plan to replace legacy `ntpd` clients with `chrony` to maintain a good platform configuration hygiene.
+
+Timesyncd is simplistic and cannot reliably ensure the required precision in multi-regional topologies. Timesyncd is the default NTP client in Ubuntu. Ubuntu's [posture](https://documentation.ubuntu.com/server/explanation/networking/about-time-synchronisation/#about-timedatectl) is "`timesyncd` will generally keep your time in sync, and `chrony` will help with more complex cases." 
+
+Cockroach Labs defers the NTP client configuration decision to the underlying planform vendors when CockroachDB is operated in private cloud or containerized environments. This includes VMWare vSphere, AWS EKS, GCP GKE, etc.
+
+####  NTP Sources
+
+CRL always referred customers to redhat's docs on this question. the "slew" and "smear" options from this doc are acceptable for CRDB, while the "step" options are not. https://access.redhat.com/articles/15145
 Red Hat has put together a comprehensive guide on the 2016 leap second issue to prepare and prevent any problems or downtime while using Red Hat Enterprise Linux.
 
 If possible, using the algorithm that google calls the "standard smear" (also used by amazon) is preferred. https://developers.google.com/time/smear
 
 NTP ONLY slews the time if the time offset does NOT exceed a setting called "step threshold" (128ms by default), otherwise it just steps it. That is a practical setting for a quick sync if clocks are way apart. 128ms is evidently not a good setting for us, yet I'd like to understand why they are thinking 2s.
 
+
+Adjusting Small Time Offsets
+
 As long as the system time offset determined by the filter algorithm is below a certain limit (the so-called step threshold, 128 ms by default), the system time is adjusted slowly and smoothly in a way that both the time offset, and the system clock drift become as small as possible, so that a new significant time offset doesn't even accumulate. See also
+
+NTP docs: Step and Stepout Thresholds
+http://doc.ntp.org/current-stable/clock.html#step
+So during normal operation, the system time is adjusted in a way that applications don't even notice the small corrections. However, how quickly and accurately a time offset is determined and compensated depends on the jitter seen by the filter algorithms from the last polling actions.
+
+The rate for the system time adjustment is limited to 500 ppm, i.e. 500 microseconds per second, or 1.8 seconds per hour, which is usually sufficient for real applications.
 
 
 Handling Large Time Offsets
@@ -79,49 +130,10 @@ So if the system time offset still exceeds the panic threshold after the stepout
 
 So a huge time offset that exceeds the panic threshold is accepted only once at startup, if ntpd is started with the '-g' option (which is usually the case).
 
+Smearing
 
+A completely different approach to correct clocks for leap second on multiple systems in a controlled manner is to suppress the information about upcoming leap second on the NTP server and slowly slew the served NTP time instead. The clients don't know a leap second will be inserted, they don't make any corrections for it themselves and simply follow the server time which eventually brings them back to UTC. This idea was described by Google in 2011 as a [leap smear](http://googleblog.blogspot.com/2011/09/time-technology-and-leaping-seconds.html).
 
-#### Time Continuity for Live CockroachDB VM Migrations
-
-Clock continuity during memory preserving maintenance
-
-https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot
-
-##### Clock device
-
-
-
-### Clock Configuration Guidance
-
-[Summary table for multi-cloud goes here]
-
-
-
-###  NTP Sources
-
-How NTP operates:  https://doc.ntp.org/documentation/4.1.0/ntpd/
-
-https://www.cockroachlabs.com/docs/v24.3/recommended-production-settings#considerations
-
-
-
-#### NTP Client Side Configuration
-
-There are three commonly used NTP clients available on Linux - *timesyncd*, *ntpd*, and *chronyd*.
-
-*Chrony* has many advantages over other NTP clients and is the only NTP client recommended by Cockroach Labs. Chrony is the [default NTP user space daemon in Red Hat 7 and onwards](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-configuring_ntp_using_ntpd). Chrony is the [recommended optional client](https://documentation.ubuntu.com/server/how-to/networking/serve-ntp-with-chrony/#serve-ntp-with-chrony) by Ubuntu. CockroachDB platform health checks conducted by Cockroach Labs will flag non-crony NTP clients.
-
-Ntpd is now deprecated and should not be used in new CockroachDB installations. Starting with Red Hat 8 [*ntpd*](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/infrastructure-services_considerations-in-adopting-rhel-8)[ is no longer available](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/infrastructure-services_considerations-in-adopting-rhel-8). By default, Ntpd is no longer installed in Ubuntu. Ntpd may, however, persist through Linux upgrades. Cockroach Labs encourages customers to plan to replace legacy ntpd clients with chony to maintain a good platform configuration hygiene.
-
-Timesyncd is simplistic and cannot reliably ensure the required precision in multi-regional topologies. Timesyncd is the default NTP client in Ubuntu. Ubuntu's [posture](https://documentation.ubuntu.com/server/explanation/networking/about-time-synchronisation/#about-timedatectl) is "`timesyncd` will generally keep your time in sync, and `chrony` will help with more complex cases." 
-
- [TODO: EKS, vSphere]
-
-
-
-#### Multi Cloud Environments
-
- [TODO: multi-cloud table goes here]
-
+On the client side no special configuration is needed. But care must be taken to ensure the clients use for synchronization only NTP servers that smear leap second in the exactly same way and not normal servers which announce leap second and also make the backward step when leap second is inserted. 
 
 
