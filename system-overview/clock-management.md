@@ -2,7 +2,7 @@
 
 ### Overview
 
-
+ the [universal handler method](#universal_handler_of_maintenance_events)
 
 This article highlights the importance of [good timekeeping](#importance-of-good-timekeeping) in CockroachDB operations and offers clock configuration guidance for homogeneous and multi-cloud environments. 
 
@@ -44,15 +44,18 @@ Timekeeping practiced by different government and business entities can take one
 
 1. Monotonic time. Instead of stepping back during a leap second, time will be slowed leading up to the leap second in such a way that time will neither jump nor move backwards. Disadvantage: The time leading up to / following the leap second will not accurately reflect the real time.
 
-2. Accurate time. This can mean a large 1 second clock step and possible going back in time, if the local clock is ahead of reference time.
+2. Accurate time. This can mean a large 1 second clock jump, for example for leap second adjustment, and possible going back in time, if the local clock is ahead of reference time.
 
-*In both cases the data consistency/correctness will be preserved by CockroachDB's internal synthetic HLC clock.* However the operators need to be concerned about 2 often undesirable realities associated with accurate timekeeping (option 2). CockroachDB nodes may spontaneously exit to protect ACID guarantees, causing a commotion in the cluster, if clock steps result in a large clock offset between nodes. And customer's applications may exhibit unexpected behavior if they read the local Linux clock or use SQL time functions like `now()`.
+*In both cases the data consistency/correctness will be preserved by CockroachDB's internal synthetic HLC clock.* However the operators need to be concerned about 2 often undesirable realities associated with accurate timekeeping (option 2):
 
-> 👉 Cockroach Labs has a strong preference for option 1 - monotonic time. The priority is for time to be smooth and coordinated across nodes rather than allowing a synchronized "jump" with UTC.
+- If a clock jump results in a large clock offset between nodes, CockroachDB nodes may spontaneously exit to protect ACID guarantees, causing unnecessary commotion in the cluster.
+- Customer's applications may exhibit unexpected behavior if they read the local Linux clock or use SQL time functions like `now()`.
 
-Time smoothing of the leap second can be implemented using NTP's *slew* or *smear*. Either is acceptable to CockroachDB while a large *step* is undesirable. Continue to [NTP Sources](#ntp-sources) for platform specific configuration guidance.
+> 👉 Cockroach Labs has a strong preference for option 1 - monotonic time. The priority is for time to be smooth and coordinated across nodes rather than allowing a synchronized jump with UTC.
 
-#### Time Continuity for Live CockroachDB VM Migrations (Memory Preserving Maintenance)
+Time smoothing of the leap second can be implemented using NTP's *slew* or *[smear](https://googleblog.blogspot.com/2011/09/time-technology-and-leaping-seconds.html)*. Either is acceptable to CockroachDB while a large *step* is undesirable. Continue to [NTP Sources](#ntp-sources) for platform specific configuration guidance.
+
+#### Time Continuity during Live CockroachDB VM Migrations (Memory Preserving Maintenance)
 
 [Live VM migrations](https://en.wikipedia.org/wiki/Live_migration) are supported by all hypervisors that can be used to run CockroachDB clusters:
 
@@ -60,80 +63,131 @@ Time smoothing of the leap second can be implemented using NTP's *slew* or *smea
 - [Hyper-V](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/manage/live-migration-overview) (Azure public cloud)
 - [ESXi](https://www.vmware.com/products/cloud-infrastructure/vsphere/vmotion) (VMware vSphere private cloud)
 
-Live VM migrations is an infrastructure level method of enabling platform's operational continuity. It moves a VM running on one physical hardware server to another server without disrupting normal operations.
+Live VM migrations is an infrastructure level method of enabling platform's operational continuity. It moves a VM running on one physical hardware server to another server without a VM reboot.
 
-Live VM migration can support 2 operational tasks - (1) runtime *VM load balancing* (e.g. VMware DRS) and (2) *VMs' memory-preserving maintenance* of the underlying hardware servers running the hypervisor software.
+##### Uninterrupted Clock Pre-requisite Requirement
 
-> 👉 Cockroach Labs advises *against* enabling runtime VM load balancing whenever CockroachDB operator has control over this configuration option. In particular, Cockroach Labs advises to keep the Migration Threshold in VMware DRS at a conservative setting for VM migrations during vSphere maintenance only.
+The key technical requirement for allowing CockroachDB VMs to migrate live without a service disruption is *guest VM clock continuity*:
 
-Therefore, the focus of this section is narrowed to the best practices for memory-preserving maintenance of CockroachDB VMs.
+> ✔️ Problem: Guest clock continuity can't be guaranteed during a live VM migration.
+>
+> Migration starts with an iterative pre-copy of the VM's memory. Then VM is suspended, the last dirty pages a copied, and the VM is resumed at destination. The downtime can range from a few milliseconds to seconds. 
+>
+> While a VM is suspended, its clock does not run. The moment a CockroachDB VM is resumed at its destination, its clock is behind by the amount of suspension time, i.e. it's arbitrarily stale. Therefore a SELECT statement starting immediately after a migration can be assigned a stale timestamp. In other words, the database cannot guarantee consistency (“C” in ACID) during a live migration.
+>
+> ✅ Solution: If live CockroachDB VM migration is required, all CockroachDB nodes must be configured to use the clock of the  hardware host via a precision clock (PTP) device.  The hardware clock is continuously available through the entire live migration cycle. CockroachDB nodes can be configured to use the hardware clock with the `--clock-device` flag in the [node start](https://www.cockroachlabs.com/docs/stable/cockroach-start.html#flags) command.
+>
+> Access to the hardware clock via PTP device is currently supported by [VMware vSphere](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/tools/12-5-0/add-a-precision-clock-device-to-a-virtual-machine.html), [AWS EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html), and [Azure](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync). However, neither AWS EC2 nor Azure hardware clock meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement and consequently may not be used with CockroachDB.
 
+Live VM migration can support 2 operational tasks - (1) runtime *VM load optimization* (e.g. VMware DRS) and (2) *VMs' memory-preserving maintenance* of the underlying hardware servers.
 
+Cockroach Labs advises *against* enabling runtime VM load optimization whenever CockroachDB operator has control over this configuration option. Best practices [guidance is available](#configuring-cockroachdb-for-planned-cloud-maintenance) for memory-preserving maintenance of CockroachDB VMs in cloud platforms meeting pre-requisite requirements.
 
 ### Clock Configuration Guidance
 
-[Summary table for multi-cloud goes here]
-
-How NTP operates:  https://doc.ntp.org/documentation/4.1.0/ntpd/
-
 #### NTP Client Side Configuration
 
-The following Linux configuration guidance applies to CockroachDB guest VMs and non-containerized hardware servers running CockroachDB software.
+The following Linux configuration guidance applies to CockroachDB guest VMs and hardware servers running CockroachDB software.
+
+> ✅ TLDR;  Cockroach Labs recommends `chrony` as the NTP client on CockroachDB VMs/servers.
 
 There are three commonly used NTP clients available on Linux - *timesyncd*, *ntpd*, and *chronyd*.
 
-*Chrony* has many advantages over other NTP clients and is the only NTP client recommended by Cockroach Labs. `Chrony` is the [default NTP user space daemon in Red Hat 7 and onwards](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-configuring_ntp_using_ntpd). `Chrony` is the [recommended optional client](https://documentation.ubuntu.com/server/how-to/networking/serve-ntp-with-chrony/#serve-ntp-with-chrony) by Ubuntu. CockroachDB platform health checks conducted by Cockroach Labs will flag non-crony NTP clients.
+- `Chrony` has many advantages over other NTP clients and is the only NTP client recommended by Cockroach Labs. `Chrony` is the [default NTP user space daemon in Red Hat 7 and onwards](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-configuring_ntp_using_ntpd). `Chrony` is the [recommended optional client](https://documentation.ubuntu.com/server/how-to/networking/serve-ntp-with-chrony/#serve-ntp-with-chrony) by Ubuntu. CockroachDB platform health checks conducted by Cockroach Labs will flag non-crony NTP clients.
+- `Ntpd` is now deprecated and should not be used in new CockroachDB installations. Starting with Red Hat 8 [ntpd is no longer available](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/infrastructure-services_considerations-in-adopting-rhel-8). By default, `ntpd` is no longer installed in Ubuntu. `Ntpd` may, however, persist through Linux upgrades. Cockroach Labs encourages customers to plan to replace legacy `ntpd` clients with `chrony` to maintain a good platform configuration hygiene.
+- `Timesyncd` is simplistic and cannot reliably ensure the required precision in multi-regional topologies. `Timesyncd` is the default NTP client in Ubuntu. Ubuntu's [posture](https://documentation.ubuntu.com/server/explanation/networking/about-time-synchronisation/#about-timedatectl) is "`timesyncd` will generally keep your time in sync, and `chrony` will help with more complex cases." 
 
-`Ntpd` is now deprecated and should not be used in new CockroachDB installations. Starting with Red Hat 8 [ntpd is no longer available](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/considerations_in_adopting_rhel_8/infrastructure-services_considerations-in-adopting-rhel-8). By default, `ntpd` is no longer installed in Ubuntu. `Ntpd` may, however, persist through Linux upgrades. Cockroach Labs encourages customers to plan to replace legacy `ntpd` clients with `chrony` to maintain a good platform configuration hygiene.
-
-Timesyncd is simplistic and cannot reliably ensure the required precision in multi-regional topologies. Timesyncd is the default NTP client in Ubuntu. Ubuntu's [posture](https://documentation.ubuntu.com/server/explanation/networking/about-time-synchronisation/#about-timedatectl) is "`timesyncd` will generally keep your time in sync, and `chrony` will help with more complex cases." 
-
-Cockroach Labs defers the NTP client configuration decision to the underlying planform vendors when CockroachDB is operated in private cloud or containerized environments. This includes VMWare vSphere, AWS EKS, GCP GKE, etc.
+> ✅ Cockroach Labs defers the NTP client configuration decision to the underlying planform vendors when CockroachDB is operated over a managed Kubernetes service, such as AWS EKS, GCP GKE, Azure AKS.
 
 ####  NTP Sources
 
-CRL always referred customers to redhat's docs on this question. the "slew" and "smear" options from this doc are acceptable for CRDB, while the "step" options are not. https://access.redhat.com/articles/15145
-Red Hat has put together a comprehensive guide on the 2016 leap second issue to prepare and prevent any problems or downtime while using Red Hat Enterprise Linux.
+A NTP server is a computer system that acts as a reliable source of time to synchronize NTP clients. In this article, the term clock "NTP server" is synonymous to "NTP source".
 
-If possible, using the algorithm that google calls the "standard smear" (also used by amazon) is preferred. https://developers.google.com/time/smear
+Configure the NTP clients on CockroachDB VMs to synchronize against NTP sources that meet the following best practices:
 
-NTP ONLY slews the time if the time offset does NOT exceed a setting called "step threshold" (128ms by default), otherwise it just steps it. That is a practical setting for a quick sync if clocks are way apart. 128ms is evidently not a good setting for us, yet I'd like to understand why they are thinking 2s.
+- Choose geographically local source with the minimum synchronization distance (network roundtrip delay). This will improve resiliency by reducing the probability of network disruption to a source. For muti-region and multi-cloud topologies it means VMs in each region should synchronize against regional NTP sources, as long as regional sources comply with Cockroach Labs best practices guidance.
+- Only use NTP sources that implement [smearing or slewing of leap second](#time-smoothing-for-leap-second-handling).
+- If memory preserving maintenance is required, configure NTP sources with uninterrupted time.
+- Configure NTP sources with redundancy. At least 3 NTP servers is a common IT practice for configuring each NTP client.
+- NTP configurations of all CockroachDB VMs in the same region must be identical.
+
+##### AWS EC2
+
+> ✅ Configure all in-region EC2 CockroachDB VMs to access the [local Amazon Time Sync Service](https://aws.amazon.com/blogs/aws/keeping-time-with-amazon-time-sync-service) via `169.254.169.123` IP address endpoint. This is usually the default EC2 Linux VM configuration. For a backup, or to synchronize CockroachDB VMs outside of AWS EC2, use  the [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html) via `time.aws.com`. The local and public AWS sources automatically [smear UTC leap seconds](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/set-time.html#leap-seconds). [AWS leap smear](https://aws.amazon.com/about-aws/whats-new/2022/11/amazon-time-sync-internet-public-ntp-service/) is algorithmically identical to [GCP leap smear](https://developers.google.com/time/smear#standardsmear).
+>
+> 👉 Avoid using the [EC2 PTP hardware clock](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html) because it does not smear time, i.e. does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement.
+
+##### GCE
+
+> ✅ Configure all in-region GCE CockroachDB VMs to access the [internal GCE NTP Service](https://cloud.google.com/compute/docs/instances/configure-ntp#configure_ntp_for_your_instances) via `metadata.google.internal` endpoint. This is usually the default GCE Linux VM configuration. For a backup, or to synchronize CockroachDB VMs outside of GCE, use [Google public NTP service](https://developers.google.com/time/faq) via `time.google.com`. The local and public GCE sources automatically [smear UTC leap seconds](https://googleblog.blogspot.com/2011/09/time-technology-and-leaping-seconds.html).  [GCP leap smear](https://developers.google.com/time/smear#standardsmear) is algorithmically identical to [AWS leap smear](https://aws.amazon.com/about-aws/whats-new/2022/11/amazon-time-sync-internet-public-ntp-service/).
+
+##### Azure
+
+> ✅ TODO  Azure-provided ... https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/time-service-treats-leap-second
+>
+
+##### VMware VSphere
+
+> ✅ The [CockroachDB on VMware vSphere](https://www.cockroachlabs.com/guides/cockroachdb-on-vmware-vsphere) white paper provides clock configuration best practices for guest VMs and ESXi servers. 
 
 
-Adjusting Small Time Offsets
 
-As long as the system time offset determined by the filter algorithm is below a certain limit (the so-called step threshold, 128 ms by default), the system time is adjusted slowly and smoothly in a way that both the time offset, and the system clock drift become as small as possible, so that a new significant time offset doesn't even accumulate. See also
+#### Multi Cloud Environments
 
-NTP docs: Step and Stepout Thresholds
-http://doc.ntp.org/current-stable/clock.html#step
-So during normal operation, the system time is adjusted in a way that applications don't even notice the small corrections. However, how quickly and accurately a time offset is determined and compensated depends on the jitter seen by the filter algorithms from the last polling actions.
+| Multi-Cloud CockroachDB Cluster                           | Recommended NTP Sources                                      |
+| --------------------------------------------------------- | ------------------------------------------------------------ |
+| EC2 + GCE                                                 | VMs in EC2-backed regions: follow [AWS EC2](#aws-ec2) earlier in this section.<br />VMs in GCE-backed regions: follow [GCE](#gce) earlier in this section.<br />Operators can "mix and match" AWS and GCE NTP sources because they are compatible. |
+| EC2 + Azure<br />EC2 + vSphere<br />EC2 + Azure + vSphere | VMs in EC2-backed regions: follow [AWS EC2](#aws-ec2) earlier in this section.<br />VMs in Azure-backed regions: use [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html)<br />VMs in vSphere-backed regions: use [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html). Alternatively use internal proprietary sources if they are guaranteed to implement standard AWS/Google smearing. |
+| GCE + Azure<br />GCE + vSphere<br />GCE + Azure + vSphere | VMs in GCE-backed regions: follow [GCE](#gce) earlier in this section.<br />VMs in Azure-backed regions: use [Google public NTP service](https://developers.google.com/time/faq)<br />VMs in vSphere-backed regions: use [Google public NTP service](https://developers.google.com/time/faq). Alternatively use internal proprietary NTP sources if they are guaranteed to implement standard Google/AWS smearing. |
 
-The rate for the system time adjustment is limited to 500 ppm, i.e. 500 microseconds per second, or 1.8 seconds per hour, which is usually sufficient for real applications.
 
 
-Handling Large Time Offsets
+### Configuring CockroachDB for Planned Cloud Maintenance
 
-If a large time offset is observed which exceeds the step threshold then the system time is about to be stepped to correct this.
+A *maintenance event* refers to a planned operational activity that requires guest VMs to be moved out of the host server.
 
-Normally this should only happen once, immediately after ntpd has started, if the system time is not yet very accurate, so only in this case the system time is stepped quickly to get the time offset below the step threshold limit and continue with the smooth adjustment.
+All public and private cloud service have a required planned maintenance. CockroachDB operators shall develop an operational procedure to handle planned maintenance events. A custom procedure is required for each cloud platform in case of a multi-cloud deployment.
 
-However, if the system time has already been accurately disciplined, but afterwards a system time offset is detected that exceeds the step threshold, ntpd waits for the so-called stepout interval (300 s by default since ntpd 4.2.8, 900 s by default until ntpd 4.2.6) to see if the large time offset persists, and then checks if the time offset is above or below the so-called panic threshold (1000 s by default). See:
+> 👉 Relying on default / out-of-the-box platform behavior during a maintenance event is generally unacceptable as it's likely to be disruptive to CockroachDB cluster VMs.  A custom procedure or configuration adjustments are usually required for public and private cloud platforms.
+>
+> Q: What are the potential ramifications of allowing live migrations of CockroachDB VMs without configuring an uninterrupted clock?
+>
+> A: Without a clock continuity guarantee, the database will be denied the means to guarantee transactional consistency and the applications may be served a stale read without any indication of that happening. Since a probability of a compromised consistency exists, however small, it is not acceptable for applications using CockroachDB as a system of records.
 
-NTP docs: Panic Threshold
-http://doc.ntp.org/current-stable/clock.html#panic
-If a large time offset occurs while 'ntpd' is already running, this can be due to one of the following reasons:
+Here is a summary of recommendations for handling maintenance events, by cloud platform:
 
-An operator has changed the system time. This requires admin rights, so it's the operator's own problem if thinks he has to mess up the timekeeping.
-Another time synchronization software is running. It's never a good idea to have more than one program running in parallel to discipline the system time, so all programs but a single one should be disabled.
-The system timekeeping is broken. There have been cases where the time on a Windows server lost more than 30 seconds whenever a huge database application ran some maintenance tasks in the night. A program like ntpd is unable to compensate this, so the bad programs should be fixed instead.
-So if the system time offset still exceeds the panic threshold after the stepout interval, ntpd terminates itself with a message saying something like, “set clock manually”. The reason behind this behavior is that ntpd means, “The system time has been changed. That must have been done by the administrator who should know what he's doing. So I can't do anything else and terminate myself.”.
+| Cloud Platform | Live Migration / Memory Preserving Maintenance Mode          | Uninterrupted Clock Support via PTP                          | Outline for Handling Maintenance Events                      |
+| -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **AWS**        | Not available                                                | [Supported](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html). However, the EC2 hardware clock does not smear time, i.e. does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Memory preserving maintenance is not available. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for AWS EC2](#aws-ec2-special-provisions). |
+| **GCP**        | [Supported](https://cloud.google.com/compute/docs/instances/live-migration-process) | Not supported                                                | Uninterrupted clock is not available in GCE, therefore CockroachDB VMs *can not* be allowed to live migrate. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for GCE](#gce-special-provisions). |
+| **Azure**      | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot) | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync). However, the Azure hardware clock does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Azure-provided uninterrupted clock does not smooth the leap second. Therefore CockroachDB VMs *can not* be allowed to live migrate, at least *near a leap second adjustment events*. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for Azure](#azure-special-provisions). |
+| **VMware**     | [Supported (vMotion)](https://www.vmware.com/products/cloud-infrastructure/vsphere/vmotion) | [Supported](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/tools/12-5-0/add-a-precision-clock-device-to-a-virtual-machine.html). vSphere ESXi servers shall use time synchronization sources configured with [time smoothing](#time-smoothing-for-leap-second-handling) for leap second handling. | Live Migration (vMotion) is supported. Follow instructions in [CockroachDB on VMware vSphere](https://www.cockroachlabs.com/guides/cockroachdb-on-vmware-vsphere) white paper. |
 
-So a huge time offset that exceeds the panic threshold is accepted only once at startup, if ntpd is started with the '-g' option (which is usually the case).
+##### Universal Handler of Maintenance Events
 
-Smearing
+< THIS SECTION IS UNDER CONSTRUCTION >
 
-A completely different approach to correct clocks for leap second on multiple systems in a controlled manner is to suppress the information about upcoming leap second on the NTP server and slowly slew the served NTP time instead. The clients don't know a leap second will be inserted, they don't make any corrections for it themselves and simply follow the server time which eventually brings them back to UTC. This idea was described by Google in 2011 as a [leap smear](http://googleblog.blogspot.com/2011/09/time-technology-and-leaping-seconds.html).
+The following method can be used on all cloud platforms, public and private. 
 
-On the client side no special configuration is needed. But care must be taken to ensure the clients use for synchronization only NTP servers that smear leap second in the exactly same way and not normal servers which announce leap second and also make the backward step when leap second is inserted. 
+> ✅ Perform a complete rolling cluster nodes restart, rebooting each CockroachDB VM. A VM reboot will relocate it to a new underlying hardware host. 
 
+##### AWS EC2 Special Provisions
+
+> ✅ TODO
+
+##### GCE Special Provisions
+
+> ✅ TODO
+>
+> By default, most GCE VM types are set to live migrate during a maintenance. However, uninterrupted clock is not available to CockroachDB VMs, so operators need to take the CockroachDB VMs must be 
+>
+> Therefore explicitly opt out, GCE will live migrate cluster VMs, with possible negative consequences discussed in this article.
+
+##### Azure Special Provisions
+
+> ✅ TODO  Follow https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync
+
+##### VMware VSphere Special Provisions
+
+> ✅ Follow detailed instructions in the [CockroachDB on VMware vSphere](https://www.cockroachlabs.com/guides/cockroachdb-on-vmware-vsphere) white paper.
 
