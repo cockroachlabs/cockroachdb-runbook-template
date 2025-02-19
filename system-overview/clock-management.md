@@ -121,8 +121,7 @@ Configure the NTP clients on CockroachDB VMs to synchronize against NTP sources 
 
 ##### Azure
 
-> ✅ TODO  Azure-provided ... https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/time-service-treats-leap-second
->
+> ✅ Azure infrastructure is [backed by Windows Server](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync) that provide guest VMs with [accurate time](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/time-service-treats-leap-second). I.e. the native Azure-provided Time sync service for Linux VMs does *not* [smear or slew leap second](#time-smoothing-for-leap-second-handling). Configure all in-region Azure CockroachDB VMs to synchronize either to [Google public NTP service](https://developers.google.com/time/faq) via `time.google.com` or to [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html) via `time.aws.com`. Either service is acceptable as primary. Configure the other one as a backup. All CockroachDB VMs in the same region must have an identical NTP configuration.
 
 ##### VMware VSphere
 
