@@ -2,8 +2,6 @@
 
 ### Overview
 
- the [universal handler method](#universal_handler_of_maintenance_events)
-
 This article highlights the importance of [good timekeeping](#importance-of-good-timekeeping) in CockroachDB operations and offers clock configuration guidance for homogeneous and multi-cloud environments. 
 
 ### Importance of Good Timekeeping
@@ -163,9 +161,11 @@ Here is a summary of recommendations for handling maintenance events, by cloud p
 | **Azure**      | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot) | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync). However, the Azure hardware clock does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Azure-provided uninterrupted clock does not smooth the leap second. Therefore CockroachDB VMs *can not* be allowed to live migrate, at least *near a leap second adjustment events*. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for Azure](#azure-special-provisions). |
 | **VMware**     | [Supported (vMotion)](https://www.vmware.com/products/cloud-infrastructure/vsphere/vmotion) | [Supported](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/tools/12-5-0/add-a-precision-clock-device-to-a-virtual-machine.html). vSphere ESXi servers shall use time synchronization sources configured with [time smoothing](#time-smoothing-for-leap-second-handling) for leap second handling. | Live Migration (vMotion) is supported. Follow instructions in [CockroachDB on VMware vSphere](https://www.cockroachlabs.com/guides/cockroachdb-on-vmware-vsphere) white paper. |
 
-##### Universal Handler of Maintenance Events
 
-< THIS SECTION IS UNDER CONSTRUCTION >
+
+< BELOW THIS LINE - UNDER CONSTRUCTION >
+
+##### Universal Handler of Maintenance Events
 
 The following method can be used on all cloud platforms, public and private. 
 
