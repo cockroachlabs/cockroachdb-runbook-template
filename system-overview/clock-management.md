@@ -155,23 +155,16 @@ Here is a summary of recommendations for handling maintenance events, by cloud p
 
 | Cloud Platform | Live Migration / Memory Preserving Maintenance Mode          | Uninterrupted Clock Support via PTP                          | Outline for Handling Maintenance Events                      |
 | -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| **AWS**        | Not available                                                | [Supported](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html). However, the EC2 hardware clock does not smear time, i.e. does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Memory preserving maintenance is not available. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for AWS EC2](#aws-ec2-special-provisions). |
-| **GCP**        | [Supported](https://cloud.google.com/compute/docs/instances/live-migration-process) | Not available                                                | Uninterrupted clock is not available in GCE, therefore CockroachDB VMs *can not* be allowed to live migrate. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for GCE](#gce-special-provisions). |
-| **Azure**      | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot) | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync). However, the Azure hardware clock does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Azure-provided uninterrupted clock does not smooth the leap second. Therefore CockroachDB VMs *can not* be allowed to live migrate, at least *near a leap second adjustment events*. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for Azure](#azure-special-provisions). |
+| **AWS**        | Not available                                                | [Supported](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html). However, the EC2 hardware clock does not smear time, i.e. does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Memory preserving maintenance is not available. Follow [special provisions for AWS EC2](#aws-ec2-special-provisions). |
+| **GCP**        | [Supported](https://cloud.google.com/compute/docs/instances/live-migration-process) | Not available                                                | Uninterrupted clock is not available in GCE, therefore CockroachDB VMs *can not* be allowed to live migrate. Follow [special provisions for GCE](#gce-special-provisions). |
+| **Azure**      | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot) | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync). However, the Azure hardware clock does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Azure-provided uninterrupted clock does not smooth the leap second. Therefore CockroachDB VMs *can not* be allowed to live migrate, at least *near a leap second adjustment events*. Follow [special provisions for Azure](#azure-special-provisions). |
 | **VMware**     | [Supported (vMotion)](https://www.vmware.com/products/cloud-infrastructure/vsphere/vmotion) | [Supported](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/tools/12-5-0/add-a-precision-clock-device-to-a-virtual-machine.html). vSphere ESXi servers shall use time synchronization sources configured with [time smoothing](#time-smoothing-for-leap-second-handling) for leap second handling. | Live Migration (vMotion) is supported. Follow instructions in [CockroachDB on VMware vSphere](https://www.cockroachlabs.com/guides/cockroachdb-on-vmware-vsphere) white paper. |
 
 
 
-##### Universal Handler of Maintenance Events
-
-The following method can be used on all cloud platforms, public and private. 
-
-> ✅ Perform a proactive rolling (one-at-a-time) CockroachDB nodes restart, rebooting each CockroachDB VM scheduled for maintenance. This procedure must be executed during the manual pre-maintenance window, per the notification from the cloud platform provider. A VM reboot during manual pre-maintenance window should relocate it to a new underlying hardware host. 
->
-
 ##### AWS EC2 Special Provisions
 
-> ✅ TODO
+> ✅ Perform a proactive rolling (one-at-a-time) CockroachDB nodes restart, stopping and starting each CockroachDB VM scheduled for maintenance (note that stop-and-start is not the same as rebooting the instance!). This procedure must be executed during the manual pre-maintenance window, per the notification from the cloud platform provider. A VM stop-and-start during manual pre-maintenance window will relocate it to a new underlying hardware host.
 
 ##### GCE Special Provisions
 
