@@ -164,7 +164,7 @@ Here is a summary of recommendations for handling maintenance events, by cloud p
 
 ##### AWS EC2 Special Provisions
 
-> ✅ Perform a proactive rolling (one-at-a-time) CockroachDB nodes restart, [stopping-and-starting or rebooting](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/schedevents_actions_retire.html) each CockroachDB VM scheduled for maintenance, depending on the root volume being EBS or instance store. This procedure must be executed during the manual pre-maintenance window, per the notification from the cloud platform provider. A stop-and-start or reboot of a VM scheduled for maintenance will relocate it to a new underlying hardware host.
+> ✅ Perform a proactive rolling (one-at-a-time) CockroachDB nodes restart, [stopping-and-starting or rebooting](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/schedevents_actions_retire.html) each CockroachDB VM scheduled for maintenance, depending on the root volume being EBS or instance store. This procedure must be executed during the scheduled maintenance event window, upon receiving a [scheduled maintenance event](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/viewing_scheduled_events.html) notification. Operators can create [custom maintenance event windows](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/event-windows.html) to avoid maintenance during peak database use periods.  A stop-and-start or reboot of a VM scheduled for maintenance will relocate it to a new underlying hardware host.
 
 ##### GCE Special Provisions
 
