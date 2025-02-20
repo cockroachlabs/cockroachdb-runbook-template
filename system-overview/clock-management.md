@@ -2,7 +2,7 @@
 
 ### Overview
 
-This article highlights the importance of [good timekeeping](#importance-of-good-timekeeping) in CockroachDB operations and offers clock configuration guidance for homogeneous and multi-cloud environments. 
+This article highlights the importance of [good timekeeping](#importance-of-good-timekeeping) in CockroachDB operations and offers [clock configuration guidance](#clock-configuration-guidance) for [homogeneous](#ntp-sources) and [multi-cloud](#multi-cloud-environments) environments. 
 
 ### Importance of Good Timekeeping
 
@@ -134,8 +134,8 @@ Configure the NTP clients on CockroachDB VMs to synchronize against NTP sources 
 | Multi-Cloud CockroachDB Cluster                           | Recommended NTP Sources                                      |
 | --------------------------------------------------------- | ------------------------------------------------------------ |
 | EC2 + GCE                                                 | VMs in EC2-backed regions: follow [AWS EC2](#aws-ec2) earlier in this section.<br />VMs in GCE-backed regions: follow [GCE](#gce) earlier in this section.<br />Operators can "mix and match" AWS and GCE NTP sources because they are compatible. |
-| EC2 + Azure<br />EC2 + vSphere<br />EC2 + Azure + vSphere | VMs in EC2-backed regions: follow [AWS EC2](#aws-ec2) earlier in this section.<br />VMs in Azure-backed regions: use [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html)<br />VMs in vSphere-backed regions: use [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html). Alternatively use internal proprietary sources if they are guaranteed to implement standard AWS/Google smearing. |
-| GCE + Azure<br />GCE + vSphere<br />GCE + Azure + vSphere | VMs in GCE-backed regions: follow [GCE](#gce) earlier in this section.<br />VMs in Azure-backed regions: use [Google public NTP service](https://developers.google.com/time/faq)<br />VMs in vSphere-backed regions: use [Google public NTP service](https://developers.google.com/time/faq). Alternatively use internal proprietary NTP sources if they are guaranteed to implement standard Google/AWS smearing. |
+| EC2 + Azure<br />EC2 + vSphere<br />EC2 + Azure + vSphere | VMs in EC2-backed regions: follow [AWS EC2](#aws-ec2) earlier in this section.<br />VMs in Azure-backed regions: use [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html).<br />VMs in vSphere-backed regions: use [public Amazon Time Sync Service](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-time-sync.html). Alternatively use internal proprietary sources if they are guaranteed to implement standard AWS/Google smearing. |
+| GCE + Azure<br />GCE + vSphere<br />GCE + Azure + vSphere | VMs in GCE-backed regions: follow [GCE](#gce) earlier in this section.<br />VMs in Azure-backed regions: use [Google public NTP service](https://developers.google.com/time/faq).<br />VMs in vSphere-backed regions: use [Google public NTP service](https://developers.google.com/time/faq). Alternatively use internal proprietary NTP sources if they are guaranteed to implement standard Google/AWS smearing. |
 
 
 
@@ -156,19 +156,18 @@ Here is a summary of recommendations for handling maintenance events, by cloud p
 | Cloud Platform | Live Migration / Memory Preserving Maintenance Mode          | Uninterrupted Clock Support via PTP                          | Outline for Handling Maintenance Events                      |
 | -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | **AWS**        | Not available                                                | [Supported](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-ec2-ntp.html). However, the EC2 hardware clock does not smear time, i.e. does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Memory preserving maintenance is not available. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for AWS EC2](#aws-ec2-special-provisions). |
-| **GCP**        | [Supported](https://cloud.google.com/compute/docs/instances/live-migration-process) | Not supported                                                | Uninterrupted clock is not available in GCE, therefore CockroachDB VMs *can not* be allowed to live migrate. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for GCE](#gce-special-provisions). |
+| **GCP**        | [Supported](https://cloud.google.com/compute/docs/instances/live-migration-process) | Not available                                                | Uninterrupted clock is not available in GCE, therefore CockroachDB VMs *can not* be allowed to live migrate. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for GCE](#gce-special-provisions). |
 | **Azure**      | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot) | [Supported](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync). However, the Azure hardware clock does not meet [time smoothing](#time-smoothing-for-leap-second-handling) requirement. | Azure-provided uninterrupted clock does not smooth the leap second. Therefore CockroachDB VMs *can not* be allowed to live migrate, at least *near a leap second adjustment events*. Implement the [universal handler method](#universal-handler-of-maintenance-events). Follow [special provisions for Azure](#azure-special-provisions). |
 | **VMware**     | [Supported (vMotion)](https://www.vmware.com/products/cloud-infrastructure/vsphere/vmotion) | [Supported](https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/tools/12-5-0/add-a-precision-clock-device-to-a-virtual-machine.html). vSphere ESXi servers shall use time synchronization sources configured with [time smoothing](#time-smoothing-for-leap-second-handling) for leap second handling. | Live Migration (vMotion) is supported. Follow instructions in [CockroachDB on VMware vSphere](https://www.cockroachlabs.com/guides/cockroachdb-on-vmware-vsphere) white paper. |
 
 
 
-< BELOW THIS LINE - UNDER CONSTRUCTION >
-
 ##### Universal Handler of Maintenance Events
 
 The following method can be used on all cloud platforms, public and private. 
 
-> ✅ Perform a complete rolling cluster nodes restart, rebooting each CockroachDB VM. A VM reboot will relocate it to a new underlying hardware host. 
+> ✅ Perform a proactive rolling (one-at-a-time) CockroachDB nodes restart, rebooting each CockroachDB VM scheduled for maintenance. This procedure must be executed during the manual pre-maintenance window, per the notification from the cloud platform provider. A VM reboot during manual pre-maintenance window should relocate it to a new underlying hardware host. 
+>
 
 ##### AWS EC2 Special Provisions
 
@@ -176,15 +175,13 @@ The following method can be used on all cloud platforms, public and private.
 
 ##### GCE Special Provisions
 
-> ✅ TODO
+> 👉 By default, the GCE VM types that run CockroachDB nodes are set to *live* migrate during maintenance. However, uninterrupted clock is not available to CockroachDB VMs in GCE. Therefore operators *must* [disable live migrations](https://cloud.google.com/compute/docs/instances/setting-vm-host-options#available_host_maintenance_properties) for all CockroachDB VMs, i.e. explicitly set the host maintenance policy from `MIGRATGE` to `TERMINATE`. Live migration needs to be disabled individually for each created CockroachDB VM because there is no way to disable it for all VMs created from a template.
 >
-> By default, most GCE VM types are set to live migrate during a maintenance. However, uninterrupted clock is not available to CockroachDB VMs, so operators need to take the CockroachDB VMs must be 
->
-> Therefore explicitly opt out, GCE will live migrate cluster VMs, with possible negative consequences discussed in this article.
+> ✅ CockroachDB operators are encouraged to [monitor the upcoming maintenance notifications](https://cloud.google.com/compute/docs/instances/monitor-plan-host-maintenance-event#overview_of_maintenance_notifications) and [manually trigger](https://cloud.google.com/compute/docs/instances/trigger-host-maintenance-event#trigger-host-maintenance-event) CockroachDB VM maintenance after [orderly stopping CockroachDB node](../routine-maintenance/node-stop.md) and ensuring only one node is down for maintenance at a time.
 
 ##### Azure Special Provisions
 
-> ✅ TODO  Follow https://learn.microsoft.com/en-us/azure/virtual-machines/linux/time-sync
+> ✅ TODO
 
 ##### VMware VSphere Special Provisions
 
