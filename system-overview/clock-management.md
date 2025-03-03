@@ -55,13 +55,13 @@ Time smoothing of the leap second can be implemented using NTP's *slew* or *[sme
 
 #### Time Continuity during Live CockroachDB VM Migrations (Memory Preserving Maintenance)
 
-[Live VM migrations](https://en.wikipedia.org/wiki/Live_migration) are supported by all hypervisors that can be used to run CockroachDB clusters:
+[Live VM migration](https://en.wikipedia.org/wiki/Live_migration)  is an infrastructure level method of enabling platform's operational continuity. It moves a VM running on one physical hardware server to another server without a VM reboot.
+
+Live VM migrations are technically supported by all hypervisors that can be used to run CockroachDB clusters (albeit not all providers, notably AWS, enable them for their users) :
 
 - [KVM](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine) (AWS and GCP public clouds)
 - [Hyper-V](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/manage/live-migration-overview) (Azure public cloud)
 - [ESXi](https://www.vmware.com/products/cloud-infrastructure/vsphere/vmotion) (VMware vSphere private cloud)
-
-Live VM migrations is an infrastructure level method of enabling platform's operational continuity. It moves a VM running on one physical hardware server to another server without a VM reboot.
 
 ##### Uninterrupted Clock Pre-requisite Requirement
 
@@ -79,13 +79,13 @@ The key technical requirement for allowing CockroachDB VMs to migrate live witho
 
 Live VM migration can support 2 operational tasks - (1) runtime *VM load optimization* (e.g. VMware DRS) and (2) *VMs' memory-preserving maintenance* of the underlying hardware servers.
 
-Cockroach Labs advises *against* enabling runtime VM load optimization whenever CockroachDB operator has control over this configuration option. Best practices [guidance is available](#configuring-cockroachdb-for-planned-cloud-maintenance) for memory-preserving maintenance of CockroachDB VMs in cloud platforms meeting pre-requisite requirements.
+Cockroach Labs advises *against* enabling runtime VM load optimization whenever CockroachDB operator has control over this configuration option. Best practices [guidance is available](#configuring-cockroachdb-for-planned-cloud-maintenance) for memory-preserving maintenance of CockroachDB VMs in cloud platforms that meet pre-requisite requirements.
 
 ### Clock Configuration Guidance
 
 #### NTP Client Side Configuration
 
-The following Linux configuration guidance applies to CockroachDB guest VMs and hardware servers running CockroachDB software.
+Linux configuration guidance in this section applies to CockroachDB guest VMs and hardware servers running CockroachDB software.
 
 > ✅ TLDR;  Cockroach Labs recommends `chrony` as the NTP client on CockroachDB VMs/servers.
 
@@ -98,6 +98,8 @@ There are three commonly used NTP clients available on Linux - *timesyncd*, *ntp
 > ✅ Cockroach Labs defers the NTP client configuration decision to the underlying planform vendors when CockroachDB is operated over a managed Kubernetes service, such as AWS EKS, GCP GKE, Azure AKS.
 
 ####  NTP Sources
+
+Linux configuration guidance in this section applies to CockroachDB guest VMs and hardware servers running CockroachDB software.
 
 A NTP server is a computer system that acts as a reliable source of time to synchronize NTP clients. In this article, the term clock "NTP server" is synonymous to "NTP source".
 
@@ -143,7 +145,7 @@ Configure the NTP clients on CockroachDB VMs to synchronize against NTP sources 
 
 A *maintenance event* refers to a planned operational activity that requires guest VMs to be moved out of the host server.
 
-All public and private cloud service have a required planned maintenance. CockroachDB operators shall develop an operational procedure to handle planned maintenance events. A custom procedure is required for each cloud platform in case of a multi-cloud deployment.
+All public and private cloud service have a required planned maintenance. CockroachDB operators shall develop an operational procedure to handle planned maintenance events. In a multi-cloud deployment, a custom procedure is required for each cloud platform.
 
 > 👉 Relying on default / out-of-the-box platform behavior during a maintenance event is generally unacceptable as it's likely to be disruptive to CockroachDB cluster VMs.  A custom procedure or configuration adjustments are usually required for public and private cloud platforms.
 >
@@ -168,13 +170,16 @@ Here is a summary of recommendations for handling maintenance events, by cloud p
 
 ##### GCE Special Provisions
 
-> 👉 By default, the GCE VM types that run CockroachDB nodes are set to *live* migrate during maintenance. However, uninterrupted clock is not available to CockroachDB VMs in GCE. Therefore operators *must* [disable live migrations](https://cloud.google.com/compute/docs/instances/setting-vm-host-options#available_host_maintenance_properties) for all CockroachDB VMs, i.e. explicitly set the host maintenance policy from `MIGRATGE` to `TERMINATE`. Live migration needs to be disabled individually for each created CockroachDB VM because there is no way to disable it for all VMs created from a template.
+> 👉 By default, the GCE VM types that run CockroachDB nodes are set to *live* migrate during maintenance. However, uninterrupted clock is not available to CockroachDB VMs in GCE. Therefore operators *must* disable live migrations for all CockroachDB VMs by explicitly setting the [host maintenance](https://cloud.google.com/compute/docs/instances/setting-vm-host-options#available_host_maintenance_properties) policy from `MIGRATGE` to `TERMINATE`. CRL recommends disabling live migrations during each CockroachDB VM [instance creation](https://cloud.google.com/compute/docs/instances/setting-vm-host-options#setnewoption). If that's not possible, disable live migrations by updating the host maintenance policy of all [existing CockroachDB VM instances](https://cloud.google.com/compute/docs/instances/setting-vm-host-options#updatingoption).
 >
-> ✅ CockroachDB operators are encouraged to [monitor the upcoming maintenance notifications](https://cloud.google.com/compute/docs/instances/monitor-plan-host-maintenance-event#overview_of_maintenance_notifications) and [manually trigger](https://cloud.google.com/compute/docs/instances/trigger-host-maintenance-event#trigger-host-maintenance-event) CockroachDB VM maintenance after [orderly stopping CockroachDB node](../routine-maintenance/node-stop.md) and ensuring only one node is down for maintenance at a time.
+> ✅ CockroachDB operators are advised to [monitor the upcoming maintenance notifications](https://cloud.google.com/compute/docs/instances/monitor-plan-host-maintenance-event#overview_of_maintenance_notifications) and [manually trigger](https://cloud.google.com/compute/docs/instances/trigger-host-maintenance-event#trigger-host-maintenance-event) CockroachDB VM maintenance after [orderly stopping CockroachDB node](../routine-maintenance/node-stop.md) and ensuring only one node is down for maintenance at a time.
 
 ##### Azure Special Provisions
 
-> ✅ TODO
+> 👉 The Azure VM types that are typically selected to run CockroachDB nodes are eligible for [live migration](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#live-migration) during maintenance. [Azure chooses](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot) the update mechanism that's least impactful to customer VMs. Since uninterrupted clock is not available to CockroachDB VMs in Azure, operators must disable live migrations for all CockroachDB VMs.
+>
+> ✅ CockroachDB operators are advised to [monitor the upcoming maintenance notifications](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-notifications) and [manually start](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-notifications-portal#start-maintenance-on-your-vm-from-the-portal) maintenance of affected CockroachDB VM during a *self-service window*. Operators can guarantee non-disruptive applications connections failover and failback by [orderly stopping CockroachDB node](../routine-maintenance/node-stop.md) and ensuring only one node is down for maintenance at a time.
+>
 
 ##### VMware VSphere Special Provisions
 
