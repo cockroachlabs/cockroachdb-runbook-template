@@ -6,7 +6,9 @@ This article highlights the importance of [good timekeeping](#importance-of-good
 
 ### Importance of Good Timekeeping
 
-CockroachDB’s persistence model is a multi-versioned append-only distributed log that rolls forward with time. This [blog](https://www.cockroachlabs.com/blog/living-without-atomic-clocks/) provides good insights into the role of clocks in CockroachDB operations and why a tight synchronization of clocks of all CockroachDB VMs in the CockroachDB cluster is extremely important.
+Clock synchronization is a critical challenge in distributed systems like CockroachDB. While atomic clocks and GPS-based hardware provide nanosecond-level precision, they introduce unnecessary complexity and cost barriers for typical deployments. CockroachDB takes a pragmatic approach, leveraging the Network Time Protocol (NTP) along with software-based compensation techniques to achieve reliable time coordination across database nodes.
+
+For further background, please visit the Cockroach Labs blog, “[Living without atomic clocks](https://www.cockroachlabs.com/blog/living-without-atomic-clocks/).” It provides good insights into the role of clocks in CockroachDB operations, and why a tight synchronization of clocks of all VMs in the CockroachDB cluster is extremely important.
 
 #### Impact of Clock Synchronization Precision
 
@@ -20,7 +22,7 @@ In CockroachDB, every transaction starts and commits at a *timestamp* assigned b
 
 The default maximum clock offset value is 500 ms. CockroachDB enforces the maximum offset with a specially designed clock skew detection mechanism built into the intra node communication protocol. CockroachDB nodes periodically exchange clock signals and computing offsets. If a CockroachDB node detects a drift of over 80% of the maximum offset (e.g. 400 ms, assuming the default maximum offset value) vs. half of other nodes, it spontaneously shuts down the node to guarantee database read consistency.
 
-In principle, an increase the maximum offset may have an adverse effect on user workload performance as it increases the probability of uncertainty retries. In most cases, retries are handled [automatically](https://www.cockroachlabs.com/docs/stable/transactions#automatic-retries) on the server side, yet in some cases the application may receive [retry errors](https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference.html#error-reference) and the transaction must be  retried  on the [client side](https://www.cockroachlabs.com/docs/stable/transactions#client-side-intervention). A decrease generally has a positive impact.
+In principle, an increase in the maximum offset may have an adverse effect on user workload performance as it increases the probability of uncertainty retries. In most cases, retries are handled [automatically](https://www.cockroachlabs.com/docs/stable/transactions#automatic-retries) on the server side, yet in some cases the application may receive [retry errors](https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference.html#error-reference) and the transaction must be  retried  on the [client side](https://www.cockroachlabs.com/docs/stable/transactions#client-side-intervention). A decrease generally has a positive impact.
 
 >  👉  If the current Cockroach Labs clock management guidance is followed, it is generally safe to reduce the maximum offset to 250 ms from its default value. This default can be explicitly overwritten with the *--max-offset* flag in the node start command.
 
@@ -32,7 +34,7 @@ When a read from one of the long-running transactions encounters a write with a 
 
 With a larger uncertainty window the probability of contention is higher. If retries are observed, for example, with a 250 ms maximum offset, a user should expect more retries with a setting of 500 ms.
 
-As noted earlier, the size of the result set impacts the probability of retries. If an application client implements single statement transactions with a small result set, the server will auto-retry and the client will experience a relatively limited increase in the response time. Yet transactions with large result sets may “spill” the result set records to the client which would inevitably increase the probability of a retry and the cost of each retry as that retry error will be propagated to the client. 
+As noted earlier, the size of the result set impacts the probability of retries. If an application client implements single statement transactions with a small result set, the server will auto-retry and the client will experience a relatively limited increase in the response time. Yet transactions with large result sets may “spill” the result set records to the client several times during the transaction, which would inevitably increase the probability of a retry and also turn it into a more costly client side retry, since server side auto-retry is only possible before the client gets any part of the result. 
 
 #### Time Smoothing for Leap Second Handling
 
@@ -42,12 +44,12 @@ Timekeeping practiced by different government and business entities can take one
 
 1. Monotonic time. Instead of stepping back during a leap second, time will be slowed leading up to the leap second in such a way that time will neither jump nor move backwards. Disadvantage: The time leading up to / following the leap second will not accurately reflect the real time.
 
-2. Accurate time. This can mean a large 1 second clock jump, for example for leap second adjustment, and possible going back in time, if the local clock is ahead of reference time.
+2. Accurate time. This can mean a large 1 second clock jump, for example for leap second adjustment, and possibly going back in time, if the local clock is ahead of reference time.
 
 *In both cases the data consistency/correctness will be preserved by CockroachDB's internal synthetic HLC clock.* However the operators need to be concerned about 2 often undesirable realities associated with accurate timekeeping (option 2):
 
 - If a clock jump results in a large clock offset between nodes, CockroachDB nodes may spontaneously exit to protect ACID guarantees, causing unnecessary commotion in the cluster.
-- Customer's applications may exhibit unexpected behavior if they read the local Linux clock or use SQL time functions like `now()`.
+- Customer applications may exhibit unexpected behavior if they read the local Linux clock or use SQL time functions like `now()`.
 
 > 👉 Cockroach Labs has a strong preference for option 1 - monotonic time. The priority is for time to be smooth and coordinated across nodes rather than allowing a synchronized jump with UTC.
 
@@ -55,7 +57,7 @@ Time smoothing of the leap second can be implemented using NTP's *slew* or *[sme
 
 #### Time Continuity during Live CockroachDB VM Migrations (Memory Preserving Maintenance)
 
-[Live VM migration](https://en.wikipedia.org/wiki/Live_migration)  is an infrastructure level method of enabling platform's operational continuity. It moves a VM running on one physical hardware server to another server without a VM reboot.
+[Live VM migration](https://en.wikipedia.org/wiki/Live_migration)  is an infrastructure level method of enabling the platform's operational continuity. It moves a VM running on one physical hardware server to another server without a VM reboot.
 
 Live VM migrations are technically supported by all hypervisors that can be used to run CockroachDB clusters (albeit not all providers, notably AWS, enable them for their users) :
 
@@ -69,7 +71,7 @@ The key technical requirement for allowing CockroachDB VMs to migrate live witho
 
 > ✔️ Problem: Guest clock continuity can't be guaranteed during a live VM migration.
 >
-> Migration starts with an iterative pre-copy of the VM's memory. Then VM is suspended, the last dirty pages a copied, and the VM is resumed at destination. The downtime can range from a few milliseconds to seconds. 
+> Migration starts with an iterative pre-copy of the VM's memory. Then the VM is suspended, the last dirty pages copied, and the VM is resumed at destination. The downtime can range from a few milliseconds to seconds. 
 >
 > While a VM is suspended, its clock does not run. The moment a CockroachDB VM is resumed at its destination, its clock is behind by the amount of suspension time, i.e. it's arbitrarily stale. Therefore a SELECT statement starting immediately after a migration can be assigned a stale timestamp. In other words, the database cannot guarantee consistency (“C” in ACID) during a live migration.
 >
@@ -79,7 +81,7 @@ The key technical requirement for allowing CockroachDB VMs to migrate live witho
 
 Live VM migration can support 2 operational tasks - (1) runtime *VM load optimization* (e.g. VMware DRS) and (2) *VMs' memory-preserving maintenance* of the underlying hardware servers.
 
-Cockroach Labs advises *against* enabling runtime VM load optimization whenever CockroachDB operator has control over this configuration option. Best practices [guidance is available](#configuring-cockroachdb-for-planned-cloud-maintenance) for memory-preserving maintenance of CockroachDB VMs in cloud platforms that meet pre-requisite requirements.
+Cockroach Labs advises *against* enabling runtime VM load optimization whenever the CockroachDB operator has control over this configuration option. Best practices [guidance is available](#configuring-cockroachdb-for-planned-cloud-maintenance) for memory-preserving maintenance of CockroachDB VMs in cloud platforms that meet pre-requisite requirements.
 
 ### Clock Configuration Guidance
 
@@ -101,11 +103,11 @@ There are three commonly used NTP clients available on Linux - *timesyncd*, *ntp
 
 Linux configuration guidance in this section applies to CockroachDB guest VMs and hardware servers running CockroachDB software.
 
-A NTP server is a computer system that acts as a reliable source of time to synchronize NTP clients. In this article, the term clock "NTP server" is synonymous to "NTP source".
+A NTP server is a computer system that acts as a reliable source of time to synchronize NTP clients. In this article, the term clock "NTP server" is synonymous with "NTP source".
 
 Configure the NTP clients on CockroachDB VMs to synchronize against NTP sources that meet the following best practices:
 
-- Choose geographically local source with the minimum synchronization distance (network roundtrip delay). This will improve resiliency by reducing the probability of network disruption to a source. For muti-region and multi-cloud topologies it means VMs in each region should synchronize against regional NTP sources, as long as regional sources comply with Cockroach Labs best practices guidance.
+- Choose a geographically local source with the minimum synchronization distance (network roundtrip delay). This will improve resiliency by reducing the probability of network disruption to a source. For muti-region and multi-cloud topologies it means VMs in each region should synchronize against regional NTP sources, as long as regional sources comply with Cockroach Labs best practices guidance.
 - Only use NTP sources that implement [smearing or slewing of leap second](#time-smoothing-for-leap-second-handling).
 - If memory preserving maintenance is required, configure NTP sources with uninterrupted time.
 - Configure NTP sources with redundancy. At least 3 NTP servers is a common IT practice for configuring each NTP client.
@@ -145,7 +147,7 @@ Configure the NTP clients on CockroachDB VMs to synchronize against NTP sources 
 
 A *maintenance event* refers to a planned operational activity that requires guest VMs to be moved out of the host server.
 
-All public and private cloud service have a required planned maintenance. CockroachDB operators shall develop an operational procedure to handle planned maintenance events. In a multi-cloud deployment, a custom procedure is required for each cloud platform.
+All public and private cloud services have a required planned maintenance. CockroachDB operators shall develop an operational procedure to handle planned maintenance events. In a multi-cloud deployment, a custom procedure is required for each cloud platform.
 
 > 👉 Relying on default / out-of-the-box platform behavior during a maintenance event is generally unacceptable as it's likely to be disruptive to CockroachDB cluster VMs.  A custom procedure or configuration adjustments are usually required for public and private cloud platforms.
 >
@@ -178,7 +180,7 @@ Here is a summary of recommendations for handling maintenance events, by cloud p
 
 > 👉 The Azure VM types that are typically selected to run CockroachDB nodes are eligible for [live migration](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#live-migration) during maintenance. [Azure chooses](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-and-updates#maintenance-that-doesnt-require-a-reboot) the update mechanism that's least impactful to customer VMs. Since uninterrupted clock is not available to CockroachDB VMs in Azure, operators must disable live migrations for all CockroachDB VMs.
 >
-> ✅ CockroachDB operators are advised to [monitor the upcoming maintenance notifications](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-notifications) and [manually start](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-notifications-portal#start-maintenance-on-your-vm-from-the-portal) maintenance of affected CockroachDB VM during a *self-service window*. Operators can guarantee non-disruptive applications connections failover and failback by [orderly stopping CockroachDB node](../routine-maintenance/node-stop.md) and ensuring only one node is down for maintenance at a time.
+> ✅ CockroachDB operators are advised to [monitor the upcoming maintenance notifications](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-notifications) and [manually start](https://learn.microsoft.com/en-us/azure/virtual-machines/maintenance-notifications-portal#start-maintenance-on-your-vm-from-the-portal) maintenance of affected CockroachDB VM during a *self-service window*. Operators can guarantee non-disruptive applications connections failover and failback by [orderly stopping CockroachDB nodes](../routine-maintenance/node-stop.md) and ensuring only one node is down for maintenance at a time.
 >
 
 ##### VMware VSphere Special Provisions
