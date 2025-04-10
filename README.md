@@ -59,7 +59,6 @@ In practice, CockroachDB operators will strive to automate most of the checks an
     * Monitoring tools
         * [Custom Dashboard (100 Essential Metrics to Monitor in Grafana, Datadog)](monitoring-alerts/monitoring-dashboard-custom.md)
         * [System tables](monitoring-alerts/monitoring-sys-tables.md)
-        * [SAR](monitoring-alerts/sar.md)
     * [Monitoring Alerts (README)](monitoring-alerts/README.md)
         * [Node CPU](monitoring-alerts/alert-node-cpu.md)
         * [Node Memory](monitoring-alerts/alert-node-memory.md)
