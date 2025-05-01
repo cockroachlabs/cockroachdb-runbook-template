@@ -191,17 +191,26 @@ CockroachDB operators in AWS cloud should be aware of the following caveats:
 
 ###### AWS NLB Mixing Up TCP Connections
 
-Application connections to CockroachDB via AWS NLB can be disrupted by `connection reset` errors or timeouts if both *client IP preservation* and *cross zone load balancing* are enabled in NLB configuration.
+Application connections to CockroachDB via AWS NLB will experience intermittent connection drops (`connection reset` errors or timeouts) if both *client IP preservation* and *cross zone load balancing* are enabled in NLB configuration.
 
-The impact on a user workload is a reduced SQL throughput due to reconnect and re-try overhead. However AWS troubleshooting paragraphs above suggest that application clients can also experience connection timeouts.
+The impact on a user workload is a reduced SQL throughput due to reconnect and re-try overhead and/or connection timeouts.
 
 The issue is described in [this article](https://medium.com/swlh/nlb-connection-resets-109720accfc6).  AWS provides two troubleshooting paragraphs pertinent to this issue:
 https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-troubleshooting.html#loopback-timeout
 https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-troubleshooting.html#intermittent-connection-failure
 
-The issue can be eliminated only by disabling <u>either</u> *client IP preservation* <u>or</u> *cross zone load balancing*.
+The issue is a logical problem in IP networking (not unique to NLB nor CockroachDB specific) called "Diamond Routing". It occurs when a client thinks it is talking to 2 different servers, when it is actually talking to the same server. In AWS, each AZ of NLB has a different IP address. A DNS lookup performed by a client returns a set of all IP addresses which belong to the NLB. When a client chooses different IP addresses for different connections, it may reuse the same source port when communicating to two different destinations. However, because of *cross zone load balancing*, the client may in fact be communicating to the same backend server (e.g. a CockroachDB node) for both connections. Because of client IP preservation, the CockroachDB node will see packets arriving from the same source IP address and source port, which appear to it as belonging to the same TCP socket. This will lead to confusion between the client and the server, and one of the connections will unexpectedly close.
 
-Since Cockroach Labs only has operating experience with *cross zone load balancing* enabled (the deployment reference), realistically the operator's decision is whether to disable *client IP preservation* or not. Disabling *client IP preservation* will deny the database an opportunity to track client connections (all client SQL connections will be reported as originating at NLB's IP address), which may obstruct effective troubleshooting. Keeping *client IP preservation* enabled will lead to intermittent performance “dips”, which could be an acceptable in some workloads since there should be no service continuity disruptions.
+![3DC](./res/diamond-routing-problem.png)
+
+The issue can be eliminated by disabling <u>either</u> *client IP preservation* <u>or</u> *cross zone load balancing*.
+
+Since Cockroach Labs only has operating experience with *cross zone load balancing* enabled (the current deployment reference), realistically the operator's decision is whether to disable *client IP preservation* or not. Disabling *client IP preservation* will deny the database an opportunity to track client connections (all client SQL connections will be reported as originating at NLB's IP address), which may obstruct effective troubleshooting. Keeping *client IP preservation* enabled will lead to intermittent performance “dips”, which could be an acceptable in some workloads since there should be no service continuity disruptions.
+
+In v24.3+ CockroachDB has a feature that allows the cluster to maintain client IP information when NLB's *client IP preservation* is disabled. It leverages Proxy protocol v2 (supported by NLB) that maintains the original client address information in a special header when transferring data across a proxy which rewrites the source IP address. To enable this feature in CockroachDB 24.3 or later version:
+
+1. Start ***all*** cluster nodes with the  `--accept-proxy-protocol-headers` flag. This flag is not documented, but discoverable with online help `cockroach start --help`.
+2. Enable proxy protocol v2 headers in the NLB's settings. The order of these above steps is important. If proxy headers are configured in NLB before all CockroachDB nodes are configured with the header flag, new connections through the NLB will break.
 
 ###### CockroachDB Node/VM Failure Detection/Health Check
 
