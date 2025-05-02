@@ -207,10 +207,10 @@ The issue can be eliminated by disabling <u>either</u> *client IP preservation* 
 
 Since Cockroach Labs only has operating experience with *cross zone load balancing* enabled (the current deployment reference), realistically the operator's decision is whether to disable *client IP preservation* or not. Disabling *client IP preservation* will deny the database an opportunity to track client connections (all client SQL connections will be reported as originating at NLB's IP address), which may obstruct effective troubleshooting. Keeping *client IP preservation* enabled will lead to intermittent performance “dips”, which perhaps may be acceptable since there should be no service continuity disruptions.
 
-In v24.3+ CockroachDB has a feature that allows the cluster to maintain client IP information when NLB's *client IP preservation* is disabled. It leverages Proxy protocol v2 (supported by NLB) that maintains the original client address information in a special header when transferring data through a proxy which rewrites the source IP address. To enable this feature in CockroachDB 24.3 or later:
+CockroachDB v24.3+ has a feature that allows the cluster to maintain client IP information when NLB's *client IP preservation* is disabled. It leverages Proxy protocol v2, supported by NLB, that maintains the original client address information in a special header when transferring data through a proxy which rewrites the source IP address. To enable this feature in CockroachDB 24.3 or later:
 
 1. Start ***all*** cluster nodes with the  `--accept-proxy-protocol-headers` flag. This flag is not documented, but discoverable with online help `cockroach start --help`.
-2. Enable proxy protocol v2 headers in the NLB's settings. The order of these steps is important. If proxy headers are configured in NLB before all CockroachDB nodes are configured with the header flag, new connections through the NLB will break.
+2. Enable proxy protocol v2 headers in the NLB's settings. The order of these two steps is important. If proxy headers are configured in NLB before all CockroachDB nodes are configured with the header flag, new connections through the NLB will break.
 
 ###### CockroachDB Node/VM Failure Detection/Health Check
 
