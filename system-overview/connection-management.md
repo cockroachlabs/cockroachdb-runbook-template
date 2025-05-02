@@ -193,13 +193,13 @@ CockroachDB operators in AWS cloud should be aware of the following caveats:
 
 Application connections to CockroachDB via AWS NLB will experience intermittent connection drops (`connection reset` errors or timeouts) if both *client IP preservation* and *cross zone load balancing* are enabled in NLB configuration.
 
-The impact on a user workload is a reduced SQL throughput due to reconnect and re-try overhead and/or connection timeouts.
+The impact on a user workload is a reduced SQL throughput due to re-connect and re-try overhead and/or connection timeouts.
 
 The issue is described in [this article](https://medium.com/swlh/nlb-connection-resets-109720accfc6).  AWS provides two troubleshooting paragraphs pertinent to this issue:
 https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-troubleshooting.html#loopback-timeout
 https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-troubleshooting.html#intermittent-connection-failure
 
-The issue is a logical problem in IP networking (not unique to NLB nor CockroachDB specific) called "Diamond Routing". It occurs when a client thinks it is talking to 2 different servers, when it is actually talking to the same server. In AWS, each AZ of NLB has a different IP address. A DNS lookup performed by a client returns a set of all IP addresses which belong to the NLB. When a client chooses different IP addresses for different connections, it may reuse the same source port when communicating to two different destinations. However, because of *cross zone load balancing*, the client may in fact be communicating to the same backend server (e.g. a CockroachDB node) for both connections. Because of client IP preservation, the CockroachDB node will see packets arriving from the same source IP address and source port, which appear to it as belonging to the same TCP socket. This will lead to confusion between the client and the server, and one of the connections will unexpectedly close.
+The issue is a logical problem in IP networking (not unique to NLB nor CockroachDB specific) called "Diamond Routing". It occurs when a client thinks it is talking to 2 different servers, when it is actually talking to the same server. In AWS, each AZ's NLB has a different IP address. A DNS lookup performed by a client returns a set of all IP addresses which belong to the NLB. When a client chooses different IP addresses for different connections, it may reuse the same source port when communicating to two different destinations. However, because of *cross zone load balancing*, the client may in fact be communicating to the same backend server (e.g. a CockroachDB node) for both connections. Because of client IP preservation, the CockroachDB node will see packets arriving from the same source IP address and source port, as if from the same TCP socket. This will lead to confusion between the client and the server, and one of the connections will unexpectedly close.
 
 ![3DC](./res/diamond-routing-problem.png)
 
