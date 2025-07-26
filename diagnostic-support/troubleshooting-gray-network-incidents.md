@@ -22,13 +22,15 @@ Gray network failures are usually transient, lasting for less than 20 seconds, o
 
 In no particular order:
 
-- Momentary [node heartbeat latency](https://www.cockroachlabs.com/docs/stable/common-issues-to-monitor#node-heartbeat-latency)  [`liveness.heartbeatlatency-p99`](https://www.cockroachlabs.com/docs/stable/ui-distributed-dashboard#node-heartbeat-latency-99th-percentile)  spike over 1 second. An example below shows only one node of the cluster experiencing network connectivity issues in a real-world production deployment. ![](C:\Dev\Runbook\cockroachdb-runbook-template-main - work\diagnostic-support\res\node-hearbeat-laterncy.png)
+- Momentary [node heartbeat latency](https://www.cockroachlabs.com/docs/stable/common-issues-to-monitor#node-heartbeat-latency)  [`liveness.heartbeatlatency-p99`](https://www.cockroachlabs.com/docs/stable/ui-distributed-dashboard#node-heartbeat-latency-99th-percentile)  spike over 1 second. An example below shows only one node of the cluster experiencing network connectivity issues in a real-world production deployment.
+
+  ![](./res/node-hearbeat-laterncy.png)
 
   
 
 - A  [live node count](https://www.cockroachlabs.com/docs/v25.2/ui-runtime-dashboard.html#live-node-count)  [`liveness.livenodes`](https://www.cockroachlabs.com/docs/v25.2/essential-metrics-self-hosted#liveness-livenodes)  showing any number of down nodes. An example below shows 10 nodes of the cluster affected by a gray network connectivity issue in a real-world production deployment. The cloud provider was performing an overnight maintenance service of some underlying network switching equipment that affected connectivity between 2 regions. TPC/IP connections were automatically failing over to redundant network circuits, however due to TCP/IP timeouts, CRDB was promptly detecting and reporting momentary liveness issues.
 
-  ![](C:\Dev\Runbook\cockroachdb-runbook-template-main - work\diagnostic-support\res\live-nodes.png)
+  ![](./res/live-nodes.png)
 
 - Under-replicated or unavailable ranges. Under-replicated ranges is a more common symptom of a gray network failures because they typically have a narrow impact on a small number of CockroachDB VMs. Unavailable ranges may be reported in a less common yet possible situation when a gray failure affects multiple cluster nodes.
 
@@ -73,7 +75,7 @@ The recommended triage protocol for troubleshooting a suspected gray network fai
 
 4. Open all  `*.svg` files in a browser, for example
 
-   ![](C:\Dev\Runbook\cockroachdb-runbook-template-main - work\diagnostic-support\res\node-tcpv4-errors.png)
+   ![](./res/node-tcpv4-errors.png)
 
 5. Observe `retrans/s` metric. This is the number of TCP/IP v4 re-transmits. In the above example  `retrans/s` metric briefly spikes to the rate of about 20/s around 5am UTC, same time CockroachDB reported liveness timeouts. Since TCP/IP is a reliable protocol, TCP retransmits undelivered packets. CockroachDB may not see a hard network "failure" because eventually retransmits succeed (the disruption only lasted ~10 or so seconds), but during that time CockroachDB saw a "slow" network that tripped nodes' liveness timeouts. While the liveness timeout messages do not necessarily translate into a business application disruption, in that case there were unavailable ranges for a brief period of time since multiple nodes were affected by connectivity issues due to underlying network equipment maintenance. 
 
