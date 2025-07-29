@@ -48,7 +48,7 @@ Operator should scan the CockroachDB messages in the log and note their timestam
 
 
 
-## 3. Tirage
+## 3. Triage
 
 The recommended triage protocol for troubleshooting a suspected gray network failure:
 
@@ -57,7 +57,7 @@ The recommended triage protocol for troubleshooting a suspected gray network fai
 2. Locate the raw SAR files on all CockroachDB VMs for the day of the incident. For example, on Red Hat Linux VMs, the raw `sar` data files are in the `/var/log/sa/` directory by default. The file name for the day is `sar<dd>`, where `<dd>` is the two-digit day of the month. You will need to generate reports for all CockroachDB VMs in the cluster, so for convenience you may copy all raw `sar` files for the day (one file from each CockroachDB VM) to a single staging directory on any VM running the same version on Linux. Prepend the file names with the host/node suffix to avoid overwriting files.
 
 3. Generate a graphical **ETCP** statistics report about TCPv4 network errors from each raw `sar` file collected from all CockroachDB VMs. Note that TCPv4 statistics depend on sadc option "-S SNMP" to be collected. If you are unable to generate this report, the most likely reason is you failed to follow the CRL recommended  [SAR](https://github.com/cockroachlabs/cockroachdb-runbook-template/blob/main/monitoring-alerts/sar.md)  configuration guidance.
-   Generate the graphical reports for all CockroachDB VMs per the following psudo code:
+   Generate the graphical reports for all CockroachDB VMs per the following pseudo code:
 
    ```
    # Network interfaces used by CRDB nodes, optional, can be blank
