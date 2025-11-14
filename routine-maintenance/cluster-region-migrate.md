@@ -3,7 +3,7 @@
 
 ### About this Procedure
 
-This procedure is invoked when all or some nodes in one of the CockroachDB cluster's regions are relocated to another region. For example, moving all nodes from `US East` to `Europe (Ireland)`. The procedure is online, no service interruption, and it's designed to minimize the performance impact on the workload.
+This procedure is invoked when all or some nodes in one of the CockroachDB cluster's regions are relocated to another region. For example, moving all nodes from `US East` to `Europe (Ireland)`. The procedure is online, with no service interruptions, and designed to minimize a performance impact on user workload.
 
 The steps in this procedure can be edited to implement similar/related procedures, such as adding a new region to a CockroachDB cluster.
 
@@ -52,3 +52,7 @@ If the region name has to change, in addition to the above outline:
 - Add a new region name to the database
 - Update all of the rows in the table that should be sent to the *new region / location*
 - Remove the region from the database.
+
+
+
+See also the procedure for transitioning (expanding) a [single-region cluster to a multi-region cluster](./cluster-sr2mr-transition.md).
