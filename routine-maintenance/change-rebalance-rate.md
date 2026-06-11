@@ -1,4 +1,4 @@
-# Procedure:  Set Snapshot Rebalance & Recovery Rates
+# Procedure:  Set Range Rebalance Rate
 
 ### About this Procedure
 
@@ -16,15 +16,7 @@ This setting limits the snapshot transfer rate *on the sender*. If a node (store
 
 
 
-> ✅  CockroachDB v23.1 and earlier had 2 separate cluster settings for rebalance and recovery snapshots - `kv.snapshot_rebalance.max_rate` and `kv.snapshot_recovery.max_rate`.
->
-> In CockroachDB v23.1 and earlier versions the `kv.snapshot_recovery.max_rate` should always be set to the same value as `kv.snapshot_rebalance.max_rate`.
->
-> `kv.snapshot_recovery.max_rate` cluster setting was deprecated in v23.2.
-
-
-
-### Node Decommission Implementation Highlights
+### Range Rebalancing Implementation Highlights
 
 **Snapshot Process**
 
