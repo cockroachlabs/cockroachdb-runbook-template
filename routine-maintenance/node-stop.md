@@ -116,19 +116,37 @@ Here a digest of essential connection management points related to shutdown hand
 
 ##### Cluster Setting:  `server.shutdown.initial_wait` 
 
-This setting should provide a connection management facility, in particular a load balancer, with a sufficient amount the time to mark the draining node as *down* and fail the affected connections over to the online nodes.
+This setting should provide a connection management facility, in particular a Load Balancer, with a sufficient amount the time to mark the draining node as *down* and fail the affected connections over to the online nodes.
 
-The default setting of `0s` does not give a load balancer the time to make appropriate adjustments, so the `server.shutdown.initial_wait` should be custom set in coordination with the load balancer's settings.
-
-For example,  a HAProxy load balancer configured for active health checks has reasonable default settings :  `... check  inter 2000  fall 3 ...`
-Which means HAProxy will consider a node *down* and will temporarily remove the server from the pool after 3 consecutive unsuccessful health checks with 2 seconds interval between the checks.
-Thus in general, a fair calculation for the `server.shutdown.initial_wait` when using HAProxy would be:
+*The default setting of `0s` does not give a Load Balancer the time to make appropriate adjustments*, so the `server.shutdown.initial_wait` should be custom set in coordination with the Load Balancer's Health Check settings for the CockroachDB node process. It should exceed the longest possible elapsed time to detect a node failure, noted as the "worst case" in this illustration:
 
 ```
-server.shutdown.initial_wait > ( (fall + 1) * inter )
+       HC                HC             HC             HC
+    SUCCESS            FAIL(1)        FAIL(2)        FAIL(N)
+       |    <interval>   |  <interval>  |  <interval>  |  <timeout> or <interval>, whichever is smaller (worst case)
+     --++---------------++--------------+----......----+-------  or
+        |               |                                 <immediate return>  (best case)
+      Node            Node
+      FAIL            FAIL
+  (worst case)     (best case)
+
+"Worst case" referrs to the longest  possible elapsed time it takes a LB' HC probe to detect a node failure.
+"Best case"  referrs to the shortest possible elapsed time it takes a LB' HC probe to detect a node failure.
 ```
 
- E.g. `server.shutdown.initial_wait='8s'` or greater for the default HAProxy health check setting would be sensible. However users should be careful not to set this setting high because the drain process with wait unconditionally for that amount of time.
+Calculations of CockroachDB cluster setting `server.shutdown.initial_wait` based on Load Balancer's HC parameters:
+
+1. Assuming INTERVAL preempts TIMEOUT if TIMEOUT is longer, calculate the longest  possible elapsed time to detect a node failure
+       `Longest possible time to detect a node failure = HC_INTERVAL * HC_UNHEALTHY_THRESHOLD + MIN(HC_TIMEOUT, HC_INTERVAL)`
+2. Set the cluster setting `server.shutdown.initial_wait` 1-2 seconds higher than the longest possible time to detect a node failure.
+
+**Example 1.**  A HAProxy load balancer configured for active health checks with recommended   `... check  inter 2000  fall 3 ...`
+Which means HAProxy will consider a node *down* and will temporarily remove the server from the pool after 3 consecutive unsuccessful health checks with 2 seconds interval between the checks. Therefore, in this case  `server.shutdown.initial_wait='9s'` or greater for the recommended HAProxy health check setting should work well.
+
+**Example 2.** A Load Balancer provided by CockroachDB Cloud on Azure has the following HC parameters (Azure defaults) - HC INTERVAL is 5s, HC UNHEALTHY THRESHOLD is 2, and HC TIMEOUT is 30s (preempted by INTERVAL). Therefore, in this case
+`set cluster setting server.shutdown.initial_wait='17s';` is appropriate.
+
+> 👉  Users should be careful not to set this setting excessively high because the drain process with wait unconditionally for that amount of time.
 
 
 
