@@ -32,7 +32,7 @@ The load balancers are typically configured with "round-robin" algorithm, which 
 
 
 
-#### Load Balancing in a Self-hosted Environment (HAProxy Example)
+#### Load Balancing in Self-Hosted - HAProxy Example
 
 This section includes a real world configuration example of the load balancer tier in front of a a CockroachDB cluster spanning 3 geographically dispersed data centers (DC1, DC2, DC3) with 3 CockroachDB nodes in each data center. That configuration is appropriate for the specific service continuity requirements and it's included merely as a practical example of *one possible* configuration. This example does not rise to a "recommended" or a "reference" level due to great variations in the realities of deployment platforms and service continuity requirements.
 
@@ -175,7 +175,7 @@ listen stats
 
 
 
-#### Load Balancing in a Cloud Deployment - Google Cloud Load Balancing
+#### Load Balancing in Self-Hosted - Google Cloud Network Load Balancer
 
 In a Google cloud deployment, a regional [native load balancer](https://cloud.google.com/load-balancing/docs/load-balancing-overview) is typically provisioned to route connections to CockroachDB nodes in that region. This is an OSI Layer 4 load balancer implemented in the network fabric. It operates across AZs, with [AZ loss survivability](https://cloud.google.com/load-balancing/docs/choosing-load-balancer#outage-resilience).   
 
@@ -183,7 +183,7 @@ Google Cloud load balancers are typically deployed in the following configuratio
 
 
 
-#### Load Balancing in a Cloud Deployment - AWS Network Load Balancers
+#### Load Balancing in Self-Hosted - AWS Network Load Balancer
 
 In a AWS cloud deployment, a regional [network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html) with [cross zone load balancing](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html#cross-zone-load-balancing) enabled (per Cockroach Labs deployment reference) is typically provisioned to route connections to CockroachDB nodes in that region. This load balancer functions at the 4th layer of the OSI model.
 
@@ -228,8 +228,8 @@ The following table summarizes the NLB target Health Check setting values:
 | NLB Setting                  | NLB Default Value         | CRL Recommended Value     | NLB Best (Lowest) Available Value |
 | ---------------------------- | ------------------------- | ------------------------- | --------------------------------- |
 | Server Health Check Interval | 10 secs                   | 2 secs                    | **5 secs**                        |
-| Unhealthy Threshold          | 2 consecutive HC failures | 3 consecutive HC failures | **2 consecutive HC failures**     |
 | Check Timeout                | 10 secs                   | 2 secs                    | **5 secs**                        |
+| Unhealthy Threshold          | 2 consecutive HC failures | 3 consecutive HC failures | **2 consecutive HC failures**     |
 
 > 👉 To ensure orderly connections failover during regular rolling maintenance, the Load Balancer settings must be coordinated with CockroachDB Cluster settings. Follow the guidance in the [node shutdown](../routine-maintenance/node-stop.md#avoiding-application-service-interruptions-due-to-node-shutdown) article.
 
